@@ -79,6 +79,12 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 .player-id-card{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;background:#101828;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px}
 .player-id-value{font:600 13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--cyan);overflow-wrap:anywhere;user-select:all}
 .player-id-note{flex-basis:100%;margin:0}
+.owner-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;background:#3b2d12;border:1px solid #b88b32;color:#ffda83;font-size:10px;font-weight:900;letter-spacing:.12em}
+.owner-panel{border-color:#8b6b2d;box-shadow:0 0 0 1px #8b6b2d22}
+.owner-panel .panel-head h2{color:#ffda83}
+.owner-setting{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:12px 0}
+.owner-setting input[type=range]{flex:1;min-width:180px;accent-color:#ffd166}
+.owner-value{min-width:42px;color:#ffda83;font-weight:800;font-variant-numeric:tabular-nums}
 .toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,20px);opacity:0;background:#202d4a;border:1px solid #526a9b;padding:10px 15px;border-radius:12px;pointer-events:none;transition:.2s;max-width:90%;text-align:center;z-index:30}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .codechip{position:fixed;right:14px;bottom:70px;background:#1d2b4d;border:1px solid var(--gold);border-radius:14px;padding:10px 12px;display:flex;gap:8px;align-items:center;z-index:25;box-shadow:0 8px 30px #0008}
@@ -193,7 +199,7 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 
  <section id="tab-stats" hidden>
   <section class="panel">
-   <div class="panel-head"><h2>Player Identity</h2><span class="muted">Local ID</span></div>
+   <div class="panel-head"><h2>Player Identity</h2><span><span class="muted">Local ID</span> <span class="owner-badge" id="ownerBadge" hidden>OWNER</span></span></div>
    <div class="player-id-card">
     <div class="player-id-value" id="playerIdValue" aria-label="Your permanent Player ID"></div>
     <button id="copyPlayerIdBtn">Copy ID</button>
@@ -207,6 +213,20 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
  </section>
 
  <section id="tab-settings" hidden>
+  <section class="panel owner-panel" id="ownerPanel" hidden style="margin-bottom:14px">
+   <div class="panel-head"><h2>Owner Panel</h2><span class="owner-badge">OWNER ACCESS</span></div>
+   <p class="muted">Owner-only local game controls. Changes apply in this browser and are kept separately from your progression save.</p>
+   <div class="owner-setting">
+    <label for="ownerMultiplierRange">Global production multiplier</label>
+    <input type="range" id="ownerMultiplierRange" min="1" max="5" step="0.5" value="1">
+    <span class="owner-value" id="ownerMultiplierValue">1.0x</span>
+   </div>
+   <div class="controls" style="justify-content:flex-start;margin-top:8px">
+    <button id="ownerResetBtn">Reset owner settings</button>
+   </div>
+   <p class="muted" id="ownerStatus">Production multiplier is currently 1.0x.</p>
+   <p class="muted">This is a local owner interface, not secure account authentication. A server-side owner check is required before using it for online/global administration.</p>
+  </section>
   <div class="grid2">
    <section class="panel">
     <div class="panel-head"><h2>Automation</h2></div>
@@ -458,6 +478,14 @@ function getPlayerId() {
   return id;
 }
 const PLAYER_ID = getPlayerId();
+const OWNER_PLAYER_ID = "EL-13B6729B-7DF0-4369-A078-FAA9831EA890";
+const IS_OWNER = PLAYER_ID === OWNER_PLAYER_ID;
+const OWNER_SETTINGS_KEY = "energyLabOwnerSettings40";
+function readOwnerMultiplier() {
+  const raw = Number(store.get(OWNER_SETTINGS_KEY));
+  return Number.isFinite(raw) ? Math.max(1, Math.min(5, Math.round(raw * 2) / 2)) : 1;
+}
+let ownerMultiplier = readOwnerMultiplier();
 
 /* ---------- state ---------- */
 const zero = list => Object.fromEntries(list.map(x => [x, 0]));
@@ -488,12 +516,12 @@ function chalMult(kind) { let m = 1; for (const c of CHALLENGES) if (state.chall
 function clickPower() {
   let base = 1;
   if (chal() !== "monk") for (const u of upgrades) if (u.kind === "click") base += u.amount * state.owned[u.id];
-  return base * rebirthMult() * ascMult() * boostMult() * chalMult("click") * (1 + 0.1 * rLvl("overcharge")) * (1 + 0.3 * aLvl("overdrive"));
+  return base * rebirthMult() * ascMult() * boostMult() * chalMult("click") * (1 + 0.1 * rLvl("overcharge")) * (1 + 0.3 * aLvl("overdrive")) * ownerMultiplier;
 }
 function rate(noBoost) {
   let base = 0;
   for (const u of upgrades) if (u.kind === "rate") base += u.amount * state.owned[u.id];
-  return base * rebirthMult() * ascMult() * (noBoost ? 1 : boostMult()) * chalMult("rate") * (1 + 0.1 * rLvl("generator"));
+  return base * rebirthMult() * ascMult() * (noBoost ? 1 : boostMult()) * chalMult("rate") * (1 + 0.1 * rLvl("generator")) * ownerMultiplier;
 }
 const discount = () => Math.min(0.4, 0.02 * rLvl("discount"));
 const cost = (u, level) => Math.ceil(u.base * Math.pow(u.growth, level === undefined ? state.owned[u.id] : level) * (1 - discount()));
@@ -928,6 +956,11 @@ const statRefs = STATS.map(([label, fn]) => {
   return {fn, b};
 });
 $("playerIdValue").textContent = PLAYER_ID;
+$("ownerBadge").hidden = !IS_OWNER;
+$("ownerPanel").hidden = !IS_OWNER;
+$("ownerMultiplierRange").value = ownerMultiplier;
+$("ownerMultiplierValue").textContent = ownerMultiplier.toFixed(1) + "x";
+$("ownerStatus").textContent = "Production multiplier is currently " + ownerMultiplier.toFixed(1) + "x.";
 const navBtns = {}; document.querySelectorAll("#nav button").forEach(b => { navBtns[b.dataset.tab] = b; });
 
 function renderAch() {
@@ -1033,6 +1066,24 @@ $("copyPlayerIdBtn").addEventListener("click", async () => {
       toast(ok ? "Player ID copied." : "Clipboard unavailable. Select the Player ID and copy it manually.");
     }
   } catch (e) { toast("Clipboard unavailable. Select the Player ID and copy it manually."); }
+});
+$("ownerMultiplierRange").addEventListener("input", e => {
+  if (!IS_OWNER) return;
+  ownerMultiplier = Math.max(1, Math.min(5, Math.round(Number(e.target.value) * 2) / 2));
+  store.set(OWNER_SETTINGS_KEY, String(ownerMultiplier));
+  $("ownerMultiplierValue").textContent = ownerMultiplier.toFixed(1) + "x";
+  $("ownerStatus").textContent = "Production multiplier is currently " + ownerMultiplier.toFixed(1) + "x.";
+  ui();
+});
+$("ownerResetBtn").addEventListener("click", () => {
+  if (!IS_OWNER) return;
+  ownerMultiplier = 1;
+  store.set(OWNER_SETTINGS_KEY, "1");
+  $("ownerMultiplierRange").value = "1";
+  $("ownerMultiplierValue").textContent = "1.0x";
+  $("ownerStatus").textContent = "Production multiplier is currently 1.0x.";
+  ui();
+  toast("Owner settings reset.");
 });
 document.querySelectorAll(".js-rebirth").forEach(b => b.addEventListener("click", () => doRebirth(false)));
 document.querySelectorAll(".js-ascend").forEach(b => b.addEventListener("click", () => {

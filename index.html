@@ -76,6 +76,9 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 .codeitem{padding:7px 10px;border:1px solid var(--line);border-radius:10px;margin:6px 0;display:flex;justify-content:space-between;gap:10px;font-size:13px}
 .statrow{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
 .statrow:last-child{border-bottom:0}.statrow span:first-child{color:var(--muted)}
+.player-id-card{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;background:#101828;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px}
+.player-id-value{font:600 13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--cyan);overflow-wrap:anywhere;user-select:all}
+.player-id-note{flex-basis:100%;margin:0}
 .toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,20px);opacity:0;background:#202d4a;border:1px solid #526a9b;padding:10px 15px;border-radius:12px;pointer-events:none;transition:.2s;max-width:90%;text-align:center;z-index:30}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .codechip{position:fixed;right:14px;bottom:70px;background:#1d2b4d;border:1px solid var(--gold);border-radius:14px;padding:10px 12px;display:flex;gap:8px;align-items:center;z-index:25;box-shadow:0 8px 30px #0008}
@@ -87,7 +90,7 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 </head>
 <body>
 <div class="wrap">
- <div class="top"><div><div class="brand">ENERGY LAB // 3.2</div><div class="sub">tap, automate, rebirth, ascend.</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
+ <div class="top"><div><div class="brand">ENERGY LAB // 4.0</div><div class="sub">tap, automate, rebirth, ascend.</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
  <div class="warn" id="storeWarn" hidden>Saving isn't fully available in this embedded view, so progress may only last until you close the tab. Go to Settings and use Export save file or Copy save code to keep your progress.</div>
  <div class="boost" id="boost" hidden></div>
  <section class="stats">
@@ -190,6 +193,14 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 
  <section id="tab-stats" hidden>
   <section class="panel">
+   <div class="panel-head"><h2>Player Identity</h2><span class="muted">Local ID</span></div>
+   <div class="player-id-card">
+    <div class="player-id-value" id="playerIdValue" aria-label="Your permanent Player ID"></div>
+    <button id="copyPlayerIdBtn">Copy ID</button>
+    <p class="muted player-id-note">This local ID stays the same through progress resets, save imports, rebirths, ascensions, and game updates. It is not tied to your IP address. Clearing browser storage can erase it; global account registration and cross-device recovery require the future server.</p>
+   </div>
+  </section>
+  <section class="panel" style="margin-top:14px">
    <div class="panel-head"><h2>Stats</h2></div>
    <div id="statList"></div>
   </section>
@@ -248,8 +259,9 @@ const el = (tag, cls) => { const e = document.createElement(tag); if (cls) e.cla
 const rand = (a, b) => a + Math.random() * (b - a);
 
 /* ---------- constants ---------- */
-const VERSION = "3.2";
+const VERSION = "4.0";
 const KEY = "energyLabSave30", BAK1 = "energyLabSave30b", BAK2 = "energyLabSave30c", SKEY = "energyLabSound30", OLD = "energyLabSave21";
+const PLAYER_ID_KEY = "energyLabPlayerId40";
 const SID = Math.random().toString(36).slice(2) + Date.now().toString(36);
 const SELL_RETURN = 0.9;
 const UPGRADE_CAP = 5000;
@@ -426,6 +438,26 @@ const store = (() => {
     }
   };
 })();
+
+/* ---------- player identity ---------- */
+function generatePlayerId() {
+  const bytes = new Uint8Array(16);
+  if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(bytes);
+  else for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+  // UUID v4 layout: random identifier, not derived from the player's IP address.
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const h = Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+  return "EL-" + h.slice(0, 8) + "-" + h.slice(8, 12) + "-" + h.slice(12, 16) + "-" + h.slice(16, 20) + "-" + h.slice(20);
+}
+function getPlayerId() {
+  const saved = store.get(PLAYER_ID_KEY);
+  if (typeof saved === "string" && /^EL-[0-9A-F]{8}(?:-[0-9A-F]{4}){3}-[0-9A-F]{12}$/.test(saved)) return saved;
+  const id = generatePlayerId();
+  store.set(PLAYER_ID_KEY, id);
+  return id;
+}
+const PLAYER_ID = getPlayerId();
 
 /* ---------- state ---------- */
 const zero = list => Object.fromEntries(list.map(x => [x, 0]));
@@ -895,6 +927,7 @@ const statRefs = STATS.map(([label, fn]) => {
   const row = el("div", "statrow"), a = el("span"), b = el("span"); a.textContent = label; row.append(a, b); $("statList").append(row);
   return {fn, b};
 });
+$("playerIdValue").textContent = PLAYER_ID;
 const navBtns = {}; document.querySelectorAll("#nav button").forEach(b => { navBtns[b.dataset.tab] = b; });
 
 function renderAch() {
@@ -988,6 +1021,19 @@ function ui() {
 
 /* ---------- events ---------- */
 $("orb").addEventListener("click", clickCore);
+$("copyPlayerIdBtn").addEventListener("click", async () => {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(PLAYER_ID);
+      toast("Player ID copied.");
+    } else {
+      const temp = document.createElement("textarea");
+      temp.value = PLAYER_ID; document.body.appendChild(temp); temp.select();
+      const ok = document.execCommand("copy"); temp.remove();
+      toast(ok ? "Player ID copied." : "Clipboard unavailable. Select the Player ID and copy it manually.");
+    }
+  } catch (e) { toast("Clipboard unavailable. Select the Player ID and copy it manually."); }
+});
 document.querySelectorAll(".js-rebirth").forEach(b => b.addEventListener("click", () => doRebirth(false)));
 document.querySelectorAll(".js-ascend").forEach(b => b.addEventListener("click", () => {
   if (!canAscend()) return;
@@ -1040,7 +1086,8 @@ $("importFile").addEventListener("change", e => {
 });
 $("resetBtn").addEventListener("click", () => confirmBox("Delete ALL your Energy Lab progress? This cannot be undone.", () => {
   state = fresh(); store.remove(KEY); store.remove(BAK1); store.remove(BAK2); conflict = false;
-  renderAch(); renderCodes(); ui(); save(); toast("Progress reset.");
+  // Player identity is stored separately and intentionally survives progress resets.
+  renderAch(); renderCodes(); ui(); save(); toast("Progress reset. Your Player ID was kept.");
 }));
 let chipUntil = 0;
 $("chipUse").addEventListener("click", () => { redeem($("chipCode").textContent, false); $("codeChip").hidden = true; chipUntil = 0; });

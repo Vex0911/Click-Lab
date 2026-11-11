@@ -164,6 +164,7 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
    <section class="panel">
     <div class="panel-head"><h2>Ascension</h2><span class="muted" id="apCount">0 AP</span></div>
     <p class="muted" id="ascInfo"></p>
+    <div class="notice" id="tierInfo" style="margin:10px 0">Current tier: Core · Next tier: Stellar at 5 ascensions.</div>
     <div class="controls" style="justify-content:flex-start"><button class="primary js-ascend">Ascend</button></div>
     <p class="muted">Ascending resets your rebirths, Rebirth Points, rebirth shop levels, energy and upgrades. In return you get Ascension Points and a permanent multiplier.</p>
    </section>
@@ -260,9 +261,9 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
     <button class="danger" id="resetBtn">Reset game</button>
    </div>
    <input id="importFile" type="file" accept=".txt,.elsave,text/plain" hidden>
-   <textarea id="saveText" rows="3" placeholder="Your save code appears here. To import, paste a save code here and press Import code." spellcheck="false"></textarea>
+   <textarea id="saveText" rows="3" placeholder="Your V4 save code appears here. Paste a supported save code here and press Import code." spellcheck="false"></textarea>
    <div class="controls" style="justify-content:flex-start;margin-top:8px"><button id="importBtn">Import code</button></div>
-   <p class="muted" style="margin-top:10px">Autosaves every 10 seconds and keeps rolling backups. Save files from V1 or V2 will not work. If downloads or file pickers are blocked where you're playing, use Copy save code and paste it back with Import code.</p>
+   <p class="muted" style="margin-top:10px">V4 uses a versioned save format with integrity checks, automatic V3 migration, and two rolling backups. Autosaves every 10 seconds. V3 save codes remain importable. Player ID and Owner settings are stored separately from progression.</p>
   </section>
  </section>
 </div>
@@ -280,7 +281,11 @@ const rand = (a, b) => a + Math.random() * (b - a);
 
 /* ---------- constants ---------- */
 const VERSION = "4.0";
-const KEY = "energyLabSave30", BAK1 = "energyLabSave30b", BAK2 = "energyLabSave30c", SKEY = "energyLabSound30", OLD = "energyLabSave21";
+const SAVE_SCHEMA = 4;
+const KEY = "energyLabSave40", BAK1 = "energyLabSave40b", BAK2 = "energyLabSave40c";
+const SKEY = "energyLabSound40";
+const LEGACY_SAVE_KEYS = ["energyLabSave30", "energyLabSave30b", "energyLabSave30c", "energyLabSave21"];
+const LEGACY_SOUND_KEY = "energyLabSound30";
 const PLAYER_ID_KEY = "energyLabPlayerId40";
 const SID = Math.random().toString(36).slice(2) + Date.now().toString(36);
 const SELL_RETURN = 0.9;
@@ -511,7 +516,7 @@ const aLvl = k => shopOn() ? state.ashop[k] : 0;
 const boostActive = () => Date.now() < state.boost.until;
 const boostMult = () => boostActive() ? state.boost.mult : 1;
 const rebirthMult = () => 1 + 0.2 * state.rebirths;
-const ascMult = () => (1 + 0.5 * state.ascensions) * (1 + 0.25 * aLvl("core"));
+const ascMult = () => (1 + 0.5 * state.ascensions) * ascensionTierMultiplier() * (1 + 0.25 * aLvl("core"));
 function chalMult(kind) { let m = 1; for (const c of CHALLENGES) if (state.challenge.done.includes(c.id)) m *= (c.reward[kind] || 1); return m; }
 function clickPower() {
   let base = 1;
@@ -555,6 +560,16 @@ function sellAmount(u) {
 }
 function sellValue(u, n) { let t = 0; const o = state.owned[u.id]; for (let i = o - n; i < o; i++) t += Math.floor(cost(u, i) * SELL_RETURN); return t; }
 
+const ASCENSION_TIERS = [
+  {id:1, name:"Core", required:0, multiplier:1},
+  {id:2, name:"Stellar", required:5, multiplier:1.5}
+];
+function currentAscensionTier() {
+  let tier = ASCENSION_TIERS[0];
+  for (const candidate of ASCENSION_TIERS) if (state.ascensions >= candidate.required) tier = candidate;
+  return tier;
+}
+const ascensionTierMultiplier = () => currentAscensionTier().multiplier;
 const rebirthReq = () => Math.ceil(20000 * Math.pow(1.7, state.rebirths) * Math.pow(0.9, aLvl("efficient")));
 const canRebirth = () => state.energy >= rebirthReq();
 const rpGain = () => Math.max(1, Math.floor(1 + 2 * Math.log10(Math.max(1, state.energy / rebirthReq()))));
@@ -609,7 +624,14 @@ function sane() {
   return [state.energy, state.lifetime, state.rp, state.ap, state.rebirths, state.ascensions].every(x => Number.isFinite(x) && x >= 0);
 }
 function envT(raw) { try { const o = JSON.parse(raw); return (o && Number(o.t)) || 0; } catch (e) { return 0; } }
-function validEnv(raw) { try { const o = JSON.parse(raw); return !!sanitize(o && o.d); } catch (e) { return false; } }
+function validEnv(raw) {
+  try {
+    const o = JSON.parse(raw);
+    if (!o || !sanitize(o.d)) return false;
+    if (o.schema === SAVE_SCHEMA) return typeof o.checksum === "string" && o.checksum === hash(JSON.stringify(o.d));
+    return o.v === 3 || o.schema === 3;
+  } catch (e) { return false; }
+}
 function rotateBackups(now) {
   const cur = store.get(KEY);
   if (!cur || !validEnv(cur)) return; // never back up garbage
@@ -625,7 +647,8 @@ function save() {
   if (!sane()) { saveFailed = true; updateStatus(); return false; }
   try {
     const now = Date.now(); state.last = now;
-    const json = JSON.stringify({v:3, ver:VERSION, t:now, sid:SID, d:state});
+    const data = JSON.stringify(state);
+    const json = JSON.stringify({schema:SAVE_SCHEMA, v:4, ver:VERSION, t:now, sid:SID, checksum:hash(data), d:state});
     rotateBackups(now);
     const ok = store.set(KEY, json) && store.get(KEY) === json;
     saveFailed = !ok; if (ok) lastSaveAt = now;
@@ -664,37 +687,51 @@ function sanitize(d) {
   return s;
 }
 function load() {
-  try { store.remove(OLD); } catch (e) {}
-  let found = null, from = "";
-  for (const k of [KEY, BAK1, BAK2]) {
+  let found = null, from = "", migrated = false;
+  const keys = [KEY, BAK1, BAK2, ...LEGACY_SAVE_KEYS];
+  for (const k of keys) {
     const raw = store.get(k); if (!raw) continue;
-    try { const o = JSON.parse(raw); const s = sanitize(o && o.d); if (s) { found = s; from = k; break; } } catch (e) {}
+    try {
+      const o = JSON.parse(raw);
+      if (!validEnv(raw)) continue;
+      const s = sanitize(o && o.d);
+      if (s) { found = s; from = k; migrated = LEGACY_SAVE_KEYS.includes(k); break; }
+    } catch (e) {}
   }
-  if (store.mode === "local") { const snd = store.get(SKEY); if (snd) setCustomSound(snd); }
+  if (store.mode === "local") {
+    const snd = store.get(SKEY) || store.get(LEGACY_SOUND_KEY);
+    if (snd) setCustomSound(snd);
+  }
   if (!found) return;
   state = found;
   if (!boostActive()) state.boost = {mult:1, until:0};
   const elapsed = Math.min(43200, Math.max(0, (Date.now() - state.last) / 1000));
   const earned = rate(true) * elapsed;
   if (earned > 0) { state.energy += earned; state.lifetime += earned; toast("Welcome back! +" + fmt(earned) + " offline energy."); }
-  if (from !== KEY) toast("Main save was damaged. Restored from backup.");
+  if (migrated) {
+    toast("V4 save system upgraded. Your existing progress was preserved.");
+  } else if (from !== KEY) {
+    toast("Main save was damaged. Restored from backup.");
+  }
 }
 
 /* ---- export / import ---- */
 function hash(str) { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(16).padStart(8, "0"); }
 function makeCode() {
   state.last = Date.now();
-  const json = JSON.stringify({v:3, ver:VERSION, t:Date.now(), d:state});
-  return "EL3:" + hash(json) + ":" + btoa(json);
+  const data = JSON.stringify(state);
+  const json = JSON.stringify({schema:SAVE_SCHEMA, v:4, ver:VERSION, t:Date.now(), checksum:hash(data), d:state});
+  return "EL4:" + hash(json) + ":" + btoa(json);
 }
 function parseCode(text) {
   const t = String(text || "").replace(/\s+/g, "");
   if (!t) return {error:"Nothing to import. Paste a save code first."};
-  const m = /^EL3:([0-9a-f]{8}):([A-Za-z0-9+/=]+)$/.exec(t);
-  if (!m) return {error:"That isn't a V3 save code. Saves from V1 or V2 can't be imported."};
-  let json; try { json = atob(m[2]); } catch (e) { return {error:"That save code is damaged."}; }
-  if (hash(json) !== m[1]) return {error:"That save code is damaged or was cut off when copying."};
+  const m = /^(EL4|EL3):([0-9a-f]{8}):([A-Za-z0-9+/=]+)$/.exec(t);
+  if (!m) return {error:"That isn't a supported Energy Lab save code."};
+  let json; try { json = atob(m[3]); } catch (e) { return {error:"That save code is damaged."}; }
+  if (hash(json) !== m[2]) return {error:"That save code is damaged or was cut off when copying."};
   let o; try { o = JSON.parse(json); } catch (e) { return {error:"That save code is damaged."}; }
+  if (m[1] === "EL4" && (o.schema !== SAVE_SCHEMA || o.checksum !== hash(JSON.stringify(o.d)))) return {error:"That V4 save failed its integrity check."};
   const s = sanitize(o && o.d);
   return s ? {state:s} : {error:"That save code has no usable data."};
 }
@@ -1021,7 +1058,13 @@ function ui() {
   $("rebInfo").textContent = "Rebirths this ascension: " + state.rebirths + " (x" + rebirthMult().toFixed(2) + "). Next rebirth needs " + fmt(rq) + " energy and gives +" + rpGain() + " RP.";
   $("rebLock").hidden = state.totalRebirths > 0; $("rebShopWrap").hidden = state.totalRebirths < 1;
   $("apCount").textContent = state.ap + " AP";
-  $("ascInfo").textContent = "Ascensions: " + state.ascensions + " (x" + ((1 + 0.5 * state.ascensions)).toFixed(2) + "). You need " + ascendReq() + " rebirths to ascend (you have " + state.rebirths + "). Ascending now would give +" + apGain() + " AP.";
+  const tier = currentAscensionTier();
+  const nextTier = ASCENSION_TIERS.find(t => t.required > state.ascensions);
+  const totalAscMult = (1 + 0.5 * state.ascensions) * tier.multiplier;
+  $("ascInfo").textContent = "Ascensions: " + state.ascensions + " (x" + totalAscMult.toFixed(2) + " total ascension multiplier). You need " + ascendReq() + " rebirths to ascend (you have " + state.rebirths + "). Ascending now would give +" + apGain() + " AP.";
+  $("tierInfo").textContent = nextTier
+    ? "Current tier: " + tier.name + " (Tier " + (tier.id === 1 ? "I" : "II") + "). Next: " + nextTier.name + " at " + nextTier.required + " total ascensions · " + state.ascensions + "/" + nextTier.required + " complete. Unlock reward: x" + nextTier.multiplier.toFixed(2) + " tier production multiplier."
+    : "Current tier: " + tier.name + " (Tier II) · Stellar bonus active: x" + tier.multiplier.toFixed(2) + " production.";
   $("ascLock").hidden = state.ascensions > 0; $("ascShopWrap").hidden = state.ascensions < 1;
   updateShop(rRefs); updateShop(aRefs);
 
@@ -1136,7 +1179,9 @@ $("importFile").addEventListener("change", e => {
   r.readAsText(f);
 });
 $("resetBtn").addEventListener("click", () => confirmBox("Delete ALL your Energy Lab progress? This cannot be undone.", () => {
-  state = fresh(); store.remove(KEY); store.remove(BAK1); store.remove(BAK2); conflict = false;
+  state = fresh(); store.remove(KEY); store.remove(BAK1); store.remove(BAK2);
+  for (const k of LEGACY_SAVE_KEYS) store.remove(k);
+  conflict = false;
   // Player identity is stored separately and intentionally survives progress resets.
   renderAch(); renderCodes(); ui(); save(); toast("Progress reset. Your Player ID was kept.");
 }));

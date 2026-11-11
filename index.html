@@ -78,7 +78,7 @@ input[type=text]{padding:9px 11px;border-radius:10px;border:1px solid var(--line
 </head>
 <body>
 <div class="wrap">
- <div class="top"><div><div class="brand">ENERGY LAB // 3.0</div><div class="sub">tap, automate, rebirth, ascend.</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
+ <div class="top"><div><div class="brand">ENERGY LAB // 3.1</div><div class="sub">tap, automate, rebirth, ascend.</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
  <div class="boost" id="boost" hidden></div>
  <section class="stats">
   <div class="stat"><small>Energy</small><strong id="energy">0</strong></div>
@@ -336,10 +336,10 @@ function sellAmount(u) {
 }
 function sellValue(u, n) { let t = 0; const o = state.owned[u.id]; for (let i = o - n; i < o; i++) t += Math.floor(cost(u, i) * SELL_RETURN); return t; }
 
-const rebirthReq = () => Math.ceil(20000 * Math.pow(3, state.rebirths) * Math.pow(0.9, aLvl("efficient")));
+const rebirthReq = () => Math.ceil(20000 * Math.pow(1.7, state.rebirths) * Math.pow(0.9, aLvl("efficient")));
 const canRebirth = () => state.energy >= rebirthReq();
 const rpGain = () => Math.max(1, Math.floor(1 + 2 * Math.log10(Math.max(1, state.energy / rebirthReq()))));
-const ascendReq = () => 10 + 2 * state.ascensions;
+const ascendReq = () => Math.ceil(10 * Math.pow(1.5, state.ascensions));
 const canAscend = () => !chal() && state.rebirths >= ascendReq();
 const apGain = () => Math.max(1, Math.floor(state.rebirths / 3));
 
@@ -387,11 +387,11 @@ function sanitize(d) {
   if (!d || typeof d !== "object") return null;
   const b = fresh();
   const num = (x, def, min) => { x = Number(x); return Number.isFinite(x) ? Math.max(min === undefined ? 0 : min, x) : def; };
-  const int = (x, def, max) => Math.min(max === undefined ? 1e9 : max, Math.floor(num(x, def)));
+  const int = (x, def, max) => Math.min(max === undefined ? Infinity : max, Math.floor(num(x, def)));
   const s = b;
   s.energy = num(d.energy, 0); s.lifetime = num(d.lifetime, 0); s.clicks = int(d.clicks, 0);
   for (const u of upgrades) s.owned[u.id] = int(d.owned && d.owned[u.id], 0, 5000);
-  s.rebirths = int(d.rebirths, 0, 500); s.totalRebirths = int(d.totalRebirths, 0); s.rp = int(d.rp, 0);
+  s.rebirths = int(d.rebirths, 0); s.totalRebirths = int(d.totalRebirths, 0); s.rp = int(d.rp, 0);
   for (const it of rItems) if (it.store) s.rshop[it.id] = int(d.rshop && d.rshop[it.id], 0, it.max);
   s.ascensions = int(d.ascensions, 0); s.ap = int(d.ap, 0);
   for (const it of aItems) if (it.store) s.ashop[it.id] = int(d.ashop && d.ashop[it.id], 0, it.max);
@@ -738,3 +738,4 @@ window.addEventListener("beforeunload", save);
 </script>
 </body>
 </html>
+

@@ -1,174 +1,450 @@
-<section class="panel">
-<div class="panel-head"><h2>Ascension</h2><span class="muted" id="apCount">0 AP</span></div>
-<p class="muted" id="ascInfo"></p>
-    <div class="notice" id="tierInfo" style="margin:10px 0">Current tier: Core · Next tier: Stellar at 5 ascensions.</div>
-<div class="controls" style="justify-content:flex-start"><button class="primary js-ascend">Ascend</button></div>
-<p class="muted">Ascending resets your rebirths, Rebirth Points, rebirth shop levels, energy and upgrades. In return you get Ascension Points and a permanent multiplier.</p>
-</section>
-@@ -260,9 +261,9 @@
-<button class="danger" id="resetBtn">Reset game</button>
-</div>
-<input id="importFile" type="file" accept=".txt,.elsave,text/plain" hidden>
-   <textarea id="saveText" rows="3" placeholder="Your save code appears here. To import, paste a save code here and press Import code." spellcheck="false"></textarea>
-   <textarea id="saveText" rows="3" placeholder="Your V4 save code appears here. Paste a supported save code here and press Import code." spellcheck="false"></textarea>
-<div class="controls" style="justify-content:flex-start;margin-top:8px"><button id="importBtn">Import code</button></div>
-   <p class="muted" style="margin-top:10px">Autosaves every 10 seconds and keeps rolling backups. Save files from V1 or V2 will not work. If downloads or file pickers are blocked where you're playing, use Copy save code and paste it back with Import code.</p>
-   <p class="muted" style="margin-top:10px">V4 uses a versioned save format with integrity checks, automatic V3 migration, and two rolling backups. Autosaves every 10 seconds. V3 save codes remain importable. Player ID and Owner settings are stored separately from progression.</p>
-</section>
-</section>
-</div>
-@@ -280,7 +281,11 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Click Lab</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --accent: #38bdf8;
+      --accent-2: #22c55e;
+      --danger: #ef4444;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --shadow: rgba(0, 0, 0, 0.25);
+    }
 
-/* ---------- constants ---------- */
-const VERSION = "4.0";
-const KEY = "energyLabSave30", BAK1 = "energyLabSave30b", BAK2 = "energyLabSave30c", SKEY = "energyLabSound30", OLD = "energyLabSave21";
-const SAVE_SCHEMA = 4;
-const KEY = "energyLabSave40", BAK1 = "energyLabSave40b", BAK2 = "energyLabSave40c";
-const SKEY = "energyLabSound40";
-const LEGACY_SAVE_KEYS = ["energyLabSave30", "energyLabSave30b", "energyLabSave30c", "energyLabSave21"];
-const LEGACY_SOUND_KEY = "energyLabSound30";
-const PLAYER_ID_KEY = "energyLabPlayerId40";
-const SID = Math.random().toString(36).slice(2) + Date.now().toString(36);
-const SELL_RETURN = 0.9;
-@@ -511,7 +516,7 @@
-const boostActive = () => Date.now() < state.boost.until;
-const boostMult = () => boostActive() ? state.boost.mult : 1;
-const rebirthMult = () => 1 + 0.2 * state.rebirths;
-const ascMult = () => (1 + 0.5 * state.ascensions) * (1 + 0.25 * aLvl("core"));
-const ascMult = () => (1 + 0.5 * state.ascensions) * ascensionTierMultiplier() * (1 + 0.25 * aLvl("core"));
-function chalMult(kind) { let m = 1; for (const c of CHALLENGES) if (state.challenge.done.includes(c.id)) m *= (c.reward[kind] || 1); return m; }
-function clickPower() {
-let base = 1;
-@@ -555,6 +560,16 @@
-}
-function sellValue(u, n) { let t = 0; const o = state.owned[u.id]; for (let i = o - n; i < o; i++) t += Math.floor(cost(u, i) * SELL_RETURN); return t; }
+    * { box-sizing: border-box; }
 
-const ASCENSION_TIERS = [
-  {id:1, name:"Core", required:0, multiplier:1},
-  {id:2, name:"Stellar", required:5, multiplier:1.5}
-];
-function currentAscensionTier() {
-  let tier = ASCENSION_TIERS[0];
-  for (const candidate of ASCENSION_TIERS) if (state.ascensions >= candidate.required) tier = candidate;
-  return tier;
-}
-const ascensionTierMultiplier = () => currentAscensionTier().multiplier;
-const rebirthReq = () => Math.ceil(20000 * Math.pow(1.7, state.rebirths) * Math.pow(0.9, aLvl("efficient")));
-const canRebirth = () => state.energy >= rebirthReq();
-const rpGain = () => Math.max(1, Math.floor(1 + 2 * Math.log10(Math.max(1, state.energy / rebirthReq()))));
-@@ -609,7 +624,14 @@
-return [state.energy, state.lifetime, state.rp, state.ap, state.rebirths, state.ascensions].every(x => Number.isFinite(x) && x >= 0);
-}
-function envT(raw) { try { const o = JSON.parse(raw); return (o && Number(o.t)) || 0; } catch (e) { return 0; } }
-function validEnv(raw) { try { const o = JSON.parse(raw); return !!sanitize(o && o.d); } catch (e) { return false; } }
-function validEnv(raw) {
-  try {
-    const o = JSON.parse(raw);
-    if (!o || !sanitize(o.d)) return false;
-    if (o.schema === SAVE_SCHEMA) return typeof o.checksum === "string" && o.checksum === hash(JSON.stringify(o.d));
-    return o.v === 3 || o.schema === 3;
-  } catch (e) { return false; }
-}
-function rotateBackups(now) {
-const cur = store.get(KEY);
-if (!cur || !validEnv(cur)) return; // never back up garbage
-@@ -625,7 +647,8 @@
-if (!sane()) { saveFailed = true; updateStatus(); return false; }
-try {
-const now = Date.now(); state.last = now;
-    const json = JSON.stringify({v:3, ver:VERSION, t:now, sid:SID, d:state});
-    const data = JSON.stringify(state);
-    const json = JSON.stringify({schema:SAVE_SCHEMA, v:4, ver:VERSION, t:now, sid:SID, checksum:hash(data), d:state});
-rotateBackups(now);
-const ok = store.set(KEY, json) && store.get(KEY) === json;
-saveFailed = !ok; if (ok) lastSaveAt = now;
-@@ -664,37 +687,51 @@
-return s;
-}
-function load() {
-  try { store.remove(OLD); } catch (e) {}
-  let found = null, from = "";
-  for (const k of [KEY, BAK1, BAK2]) {
-  let found = null, from = "", migrated = false;
-  const keys = [KEY, BAK1, BAK2, ...LEGACY_SAVE_KEYS];
-  for (const k of keys) {
-const raw = store.get(k); if (!raw) continue;
-    try { const o = JSON.parse(raw); const s = sanitize(o && o.d); if (s) { found = s; from = k; break; } } catch (e) {}
-    try {
-      const o = JSON.parse(raw);
-      if (!validEnv(raw)) continue;
-      const s = sanitize(o && o.d);
-      if (s) { found = s; from = k; migrated = LEGACY_SAVE_KEYS.includes(k); break; }
-    } catch (e) {}
-  }
-  if (store.mode === "local") {
-    const snd = store.get(SKEY) || store.get(LEGACY_SOUND_KEY);
-    if (snd) setCustomSound(snd);
-}
-  if (store.mode === "local") { const snd = store.get(SKEY); if (snd) setCustomSound(snd); }
-if (!found) return;
-state = found;
-if (!boostActive()) state.boost = {mult:1, until:0};
-const elapsed = Math.min(43200, Math.max(0, (Date.now() - state.last) / 1000));
-const earned = rate(true) * elapsed;
-if (earned > 0) { state.energy += earned; state.lifetime += earned; toast("Welcome back! +" + fmt(earned) + " offline energy."); }
-  if (from !== KEY) toast("Main save was damaged. Restored from backup.");
-  if (migrated) {
-    toast("V4 save system upgraded. Your existing progress was preserved.");
-  } else if (from !== KEY) {
-    toast("Main save was damaged. Restored from backup.");
-  }
-}
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at top, #1e293b, var(--bg));
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
 
-/* ---- export / import ---- */
-function hash(str) { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(16).padStart(8, "0"); }
-function makeCode() {
-state.last = Date.now();
-  const json = JSON.stringify({v:3, ver:VERSION, t:Date.now(), d:state});
-  return "EL3:" + hash(json) + ":" + btoa(json);
-  const data = JSON.stringify(state);
-  const json = JSON.stringify({schema:SAVE_SCHEMA, v:4, ver:VERSION, t:Date.now(), checksum:hash(data), d:state});
-  return "EL4:" + hash(json) + ":" + btoa(json);
-}
-function parseCode(text) {
-const t = String(text || "").replace(/\s+/g, "");
-if (!t) return {error:"Nothing to import. Paste a save code first."};
-  const m = /^EL3:([0-9a-f]{8}):([A-Za-z0-9+/=]+)$/.exec(t);
-  if (!m) return {error:"That isn't a V3 save code. Saves from V1 or V2 can't be imported."};
-  let json; try { json = atob(m[2]); } catch (e) { return {error:"That save code is damaged."}; }
-  if (hash(json) !== m[1]) return {error:"That save code is damaged or was cut off when copying."};
-  const m = /^(EL4|EL3):([0-9a-f]{8}):([A-Za-z0-9+/=]+)$/.exec(t);
-  if (!m) return {error:"That isn't a supported Energy Lab save code."};
-  let json; try { json = atob(m[3]); } catch (e) { return {error:"That save code is damaged."}; }
-  if (hash(json) !== m[2]) return {error:"That save code is damaged or was cut off when copying."};
-let o; try { o = JSON.parse(json); } catch (e) { return {error:"That save code is damaged."}; }
-  if (m[1] === "EL4" && (o.schema !== SAVE_SCHEMA || o.checksum !== hash(JSON.stringify(o.d)))) return {error:"That V4 save failed its integrity check."};
-const s = sanitize(o && o.d);
-return s ? {state:s} : {error:"That save code has no usable data."};
-}
-@@ -1021,7 +1058,13 @@
-$("rebInfo").textContent = "Rebirths this ascension: " + state.rebirths + " (x" + rebirthMult().toFixed(2) + "). Next rebirth needs " + fmt(rq) + " energy and gives +" + rpGain() + " RP.";
-$("rebLock").hidden = state.totalRebirths > 0; $("rebShopWrap").hidden = state.totalRebirths < 1;
-$("apCount").textContent = state.ap + " AP";
-  $("ascInfo").textContent = "Ascensions: " + state.ascensions + " (x" + ((1 + 0.5 * state.ascensions)).toFixed(2) + "). You need " + ascendReq() + " rebirths to ascend (you have " + state.rebirths + "). Ascending now would give +" + apGain() + " AP.";
-  const tier = currentAscensionTier();
-  const nextTier = ASCENSION_TIERS.find(t => t.required > state.ascensions);
-  const totalAscMult = (1 + 0.5 * state.ascensions) * tier.multiplier;
-  $("ascInfo").textContent = "Ascensions: " + state.ascensions + " (x" + totalAscMult.toFixed(2) + " total ascension multiplier). You need " + ascendReq() + " rebirths to ascend (you have " + state.rebirths + "). Ascending now would give +" + apGain() + " AP.";
-  $("tierInfo").textContent = nextTier
-    ? "Current tier: " + tier.name + " (Tier " + (tier.id === 1 ? "I" : "II") + "). Next: " + nextTier.name + " at " + nextTier.required + " total ascensions · " + state.ascensions + "/" + nextTier.required + " complete. Unlock reward: x" + nextTier.multiplier.toFixed(2) + " tier production multiplier."
-    : "Current tier: " + tier.name + " (Tier II) · Stellar bonus active: x" + tier.multiplier.toFixed(2) + " production.";
-$("ascLock").hidden = state.ascensions > 0; $("ascShopWrap").hidden = state.ascensions < 1;
-updateShop(rRefs); updateShop(aRefs);
+    .game {
+      width: min(820px, 92vw);
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 18px;
+      box-shadow: 0 18px 40px var(--shadow);
+      padding: 22px;
+    }
 
-@@ -1136,7 +1179,9 @@
-r.readAsText(f);
-});
-$("resetBtn").addEventListener("click", () => confirmBox("Delete ALL your Energy Lab progress? This cannot be undone.", () => {
-  state = fresh(); store.remove(KEY); store.remove(BAK1); store.remove(BAK2); conflict = false;
-  state = fresh(); store.remove(KEY); store.remove(BAK1); store.remove(BAK2);
-  for (const k of LEGACY_SAVE_KEYS) store.remove(k);
-  conflict = false;
-// Player identity is stored separately and intentionally survives progress resets.
-renderAch(); renderCodes(); ui(); save(); toast("Progress reset. Your Player ID was kept.");
-}));
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+    }
+
+    .status {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .badge {
+      background: var(--panel-2);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+    }
+
+    .panel {
+      background: rgba(31, 41, 55, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .click-area {
+      display: grid;
+      place-items: center;
+      min-height: 300px;
+      background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(34,197,94,0.08));
+      border: 1px solid rgba(56,189,248,0.3);
+      border-radius: 18px;
+      margin-bottom: 14px;
+    }
+
+    .main-button {
+      border: none;
+      border-radius: 50%;
+      width: 180px;
+      height: 180px;
+      font-size: 1.8rem;
+      font-weight: 800;
+      cursor: pointer;
+      color: #03111c;
+      background: linear-gradient(135deg, #7dd3fc, #4ade80);
+      box-shadow: 0 12px 24px rgba(56, 189, 248, 0.4);
+      transition: transform 0.08s ease, box-shadow 0.12s ease;
+    }
+
+    .main-button:hover { transform: translateY(-2px) scale(1.02); }
+    .main-button:active { transform: scale(0.96); }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .stat {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .stat-value {
+      margin-top: 10px;
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+
+    .shop h2, .info h2 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 1.2rem;
+    }
+
+    .shop-item, .info-box {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+
+    .shop-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .shop-item h3 {
+      margin: 0 0 5px;
+      font-size: 1rem;
+    }
+
+    .shop-item p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    button.buy {
+      border: none;
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      color: white;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+
+    button.buy:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    button.reset {
+      border: none;
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+      color: white;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 10px 14px;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    @media (max-width: 720px) {
+      .layout { grid-template-columns: 1fr; }
+      .status { justify-content: flex-start; }
+      .stats { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="game">
+    <div class="topbar">
+      <h1>Click Lab</h1>
+      <div class="status">
+        <div class="badge" id="energyDisplay">Energy: 0</div>
+        <div class="badge" id="multiplierDisplay">x1.00</div>
+      </div>
+    </div>
+
+    <div class="layout">
+      <section class="panel main">
+        <div class="click-area">
+          <button class="main-button" id="collectButton" aria-label="Collect energy">Collect</button>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-label">Total clicks</div>
+            <div class="stat-value" id="clicksDisplay">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Per second</div>
+            <div class="stat-value" id="autoDisplay">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Click level</div>
+            <div class="stat-value" id="clickLevelDisplay">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Auto level</div>
+            <div class="stat-value" id="autoLevelDisplay">0</div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel sidebar">
+        <div class="shop">
+          <h2>Upgrades</h2>
+
+          <div class="shop-item">
+            <div>
+              <h3>Stronger click</h3>
+              <p id="clickUpgradeInfo">Cost: 15</p>
+            </div>
+            <button class="buy" id="buyClickUpgrade">Buy</button>
+          </div>
+
+          <div class="shop-item">
+            <div>
+              <h3>Auto collector</h3>
+              <p id="autoUpgradeInfo">Cost: 30</p>
+            </div>
+            <button class="buy" id="buyAutoUpgrade">Buy</button>
+          </div>
+
+          <div class="shop-item">
+            <div>
+              <h3>Boost</h3>
+              <p>Double output for 10 seconds</p>
+            </div>
+            <button class="buy" id="buyBoost">Boost</button>
+          </div>
+        </div>
+
+        <div class="info">
+          <h2>Lab status</h2>
+          <div class="info-box" id="statusText">
+            Machines are standing by. Start generating energy.
+          </div>
+        </div>
+
+        <button class="reset" id="resetButton">Reset progress</button>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'click-lab-save';
+
+    const defaultState = {
+      energy: 0,
+      totalClicks: 0,
+      clickLevel: 0,
+      autoLevel: 0,
+      boostUntil: 0,
+      lastTick: Date.now()
+    };
+
+    let state = loadState();
+
+    const els = {
+      energyDisplay: document.getElementById('energyDisplay'),
+      multiplierDisplay: document.getElementById('multiplierDisplay'),
+      clicksDisplay: document.getElementById('clicksDisplay'),
+      autoDisplay: document.getElementById('autoDisplay'),
+      clickLevelDisplay: document.getElementById('clickLevelDisplay'),
+      autoLevelDisplay: document.getElementById('autoLevelDisplay'),
+      clickUpgradeInfo: document.getElementById('clickUpgradeInfo'),
+      autoUpgradeInfo: document.getElementById('autoUpgradeInfo'),
+      statusText: document.getElementById('statusText'),
+      buyClickUpgrade: document.getElementById('buyClickUpgrade'),
+      buyAutoUpgrade: document.getElementById('buyAutoUpgrade'),
+      buyBoost: document.getElementById('buyBoost'),
+      collectButton: document.getElementById('collectButton'),
+      resetButton: document.getElementById('resetButton')
+    };
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        ...state,
+        lastTick: Date.now()
+      }));
+    }
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        if (!saved) return { ...defaultState };
+        return {
+          ...defaultState,
+          ...saved,
+          lastTick: Date.now()
+        };
+      } catch (error) {
+        return { ...defaultState };
+      }
+    }
+
+    function clickPower() {
+      let base = 1 + state.clickLevel * 1.55;
+      if (boostActive()) base *= 2;
+      return base;
+    }
+
+    function autoPower() {
+      return state.autoLevel * (boostActive() ? 2 : 1);
+    }
+
+    function boostActive() {
+      return Date.now() < state.boostUntil;
+    }
+
+    function clickUpgradeCost() {
+      return Math.floor(15 * Math.pow(1.7, state.clickLevel));
+    }
+
+    function autoUpgradeCost() {
+      return Math.floor(30 * Math.pow(1.75, state.autoLevel));
+    }
+
+    function formatNumber(value) {
+      if (value >= 1000000) return (value / 1000000).toFixed(2) + 'M';
+      if (value >= 1000) return (value / 1000).toFixed(2) + 'K';
+      return value.toFixed(value >= 10 ? 0 : 2);
+    }
+
+    function updateUI() {
+      const clickMult = clickPower();
+      const autoRate = autoPower();
+      const boostText = boostActive() ? 'Boost active for ' + Math.max(0, Math.ceil((state.boostUntil - Date.now()) / 1000)) + 's' : 'No boost';
+
+      els.energyDisplay.textContent = 'Energy: ' + formatNumber(state.energy);
+      els.multiplierDisplay.textContent = 'x' + clickMult.toFixed(2);
+      els.clicksDisplay.textContent = formatNumber(state.totalClicks);
+      els.autoDisplay.textContent = formatNumber(autoRate);
+      els.clickLevelDisplay.textContent = String(state.clickLevel);
+      els.autoLevelDisplay.textContent = String(state.autoLevel);
+      els.clickUpgradeInfo.textContent = 'Cost: ' + formatNumber(clickUpgradeCost());
+      els.autoUpgradeInfo.textContent = 'Cost: ' + formatNumber(autoUpgradeCost());
+      els.buyClickUpgrade.disabled = state.energy < clickUpgradeCost();
+      els.buyAutoUpgrade.disabled = state.energy < autoUpgradeCost();
+      els.buyBoost.disabled = state.energy < 50;
+
+      els.statusText.textContent = boostText + ' • Click power: ' + clickMult.toFixed(2) + ' • Auto generation: ' + autoRate.toFixed(2) + '/s';
+    }
+
+    function collectEnergy() {
+      const gain = clickPower();
+      state.energy += gain;
+      state.totalClicks += 1;
+      updateUI();
+      saveState();
+    }
+
+    function buyClickUpgrade() {
+      const cost = clickUpgradeCost();
+      if (state.energy < cost) return;
+      state.energy -= cost;
+      state.clickLevel += 1;
+      updateUI();
+      saveState();
+    }
+
+    function buyAutoUpgrade() {
+      const cost = autoUpgradeCost();
+      if (state.energy < cost) return;
+      state.energy -= cost;
+      state.autoLevel += 1;
+      updateUI();
+      saveState();
+    }
+
+    function buyBoost() {
+      if (state.energy < 50) return;
+      state.energy -= 50;
+      state.boostUntil = Date.now() + 10000;
+      updateUI();
+      saveState();
+    }
+
+    function tick() {
+      const now = Date.now();
+      const elapsedSeconds = (now - state.lastTick) / 1000;
+      state.lastTick = now;
+
+      if (state.autoLevel > 0) {
+        state.energy += autoPower() * elapsedSeconds;
+      }
+
+      updateUI();
+      saveState();
+    }
+
+    function resetGame() {
+      if (!window.confirm('Reset all progress?')) return;
+      state = { ...defaultState, lastTick: Date.now() };
+      updateUI();
+      saveState();
+    }
+
+    els.collectButton.addEventListener('click', collectEnergy);
+    els.buyClickUpgrade.addEventListener('click', buyClickUpgrade);
+    els.buyAutoUpgrade.addEventListener('click', buyAutoUpgrade);
+    els.buyBoost.addEventListener('click', buyBoost);
+    els.resetButton.addEventListener('click', resetGame);
+
+    updateUI();
+    setInterval(tick, 200);
+  </script>
+</body>
+</html>

@@ -96,7 +96,7 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 </head>
 <body>
 <div class="wrap">
- <div class="top"><div><div class="brand">ENERGY LAB // 4.3</div><div class="sub">Energy Lab V4.3 Pre-Release 2</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
+ <div class="top"><div><div class="brand">ENERGY LAB // 4.3</div><div class="sub">Energy Lab V4.3 Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
  <div class="warn" id="storeWarn" hidden>Saving isn't fully available in this embedded view, so progress may only last until you close the tab. Go to Settings and use Export save file or Copy save code to keep your progress.</div>
  <div class="boost" id="boost" hidden></div>
  <section class="stats">
@@ -223,6 +223,8 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
     <label class="switch"><input type="checkbox" id="autoUpG"> Auto-Upgrade: Generators <span class="muted" id="autoUpGNote"></span></label>
     <div class="row"></div>
     <label class="switch"><input type="checkbox" id="autoRe"> Auto-Rebirth <span class="muted" id="autoReNote"></span></label>
+    <div class="row"></div>
+    <label class="switch"><input type="checkbox" id="autoRe"> Auto-Ascend <span class="muted" id="autoAsNote"></span></label>
     <div class="row"></div>
     <label class="switch"><input type="checkbox" id="autoCl"> Auto-Claim Codes <span class="muted" id="autoClNote"></span></label>
     <p class="muted" style="margin-top:12px">Unlocked automation does not turn on by itself. Switch it on here.</p>
@@ -419,6 +421,7 @@ const aItems = [
   {id:"overdrive",store:"ashop",cur:"ap",name:"Overdrive",base:1,growth:1.7,max:40,desc:l=>"+30% click power per level · now +"+l*30+"%"},
   {id:"efficient",store:"ashop",cur:"ap",name:"Efficient Rebirths",base:2,growth:2,max:10,desc:l=>"-10% rebirth requirement per level · now x"+Math.pow(0.9,l).toFixed(2)},
   {id:"autoRe",unlock:"autoRebirth",cur:"ap",name:"Auto-Rebirth",base:3,max:1,desc:()=>"Unlocks the Auto-Rebirth setting"}
+ {id:"autoAs", unlock:"autoAscend",cur:"ap",name:"Auto-Ascend",base:4,max:1,desc:()=>"Unlocks the Auto-Ascend setting"}
 ];
 
 const ACH = [

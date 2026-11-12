@@ -1,0 +1,116 @@
+/* Optional neon-lab skin for the Energy Lab interface. */
+:root {
+  color-scheme: dark;
+  --bg: #071411;
+  --panel: #0e211b;
+  --panel2: #153329;
+  --line: #285643;
+  --text: #e6fff1;
+  --muted: #91b9a3;
+  --cyan: #62f5bb;
+  --purple: #83e3cf;
+  --green: #83f0a8;
+  --gold: #f5d875;
+  --red: #ff8291;
+  --lab-glow: rgb(64 255 173 / 14%);
+}
+
+* { scrollbar-color: #34785a #091812; }
+
+body {
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(rgb(68 180 126 / 4%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(68 180 126 / 4%) 1px, transparent 1px),
+    radial-gradient(ellipse at 50% -18%, #1a5841 0, transparent 52%);
+  background-size: 32px 32px, 32px 32px, auto;
+  background-attachment: fixed;
+}
+
+.wrap { max-width: 1120px; }
+.brand { color: var(--cyan); text-shadow: 0 0 18px var(--lab-glow); }
+
+.stat,
+.panel {
+  background: linear-gradient(145deg, rgb(17 43 33 / 96%), rgb(9 26 20 / 96%));
+  border-color: var(--line);
+  box-shadow: inset 0 1px rgb(202 255 226 / 4%), 0 12px 32px rgb(0 0 0 / 18%);
+}
+
+.stat { border-radius: 12px; }
+.stat small,
+.panel h3.group { color: var(--muted); }
+.stat strong { font-variant-numeric: tabular-nums; }
+
+.nav button { border-radius: 8px; }
+.nav button.on {
+  background: #153c2c;
+  border-color: #3a9465;
+  color: var(--cyan);
+  box-shadow: inset 0 -2px var(--cyan);
+}
+
+button {
+  border-color: #32634a;
+  background: linear-gradient(180deg, #193b2b, #10271d);
+  border-radius: 8px;
+  transition: border-color .16s ease, box-shadow .16s ease, filter .16s ease, transform .08s ease;
+}
+button:hover:not(:disabled) {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px var(--lab-glow);
+}
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+.primary {
+  color: #042115;
+  font-weight: 800;
+  background: linear-gradient(110deg, #57e8a4, #83e7d0);
+  border-color: #8dffcf;
+}
+.danger { background: #48232b; border-color: #96505c; color: #ffe8ec; }
+
+.orb {
+  border-color: #a4ffda99;
+  background: radial-gradient(circle at 35% 28%, #effff7, #9bffd7 10%, #3bca8d 38%, #167254 68%, #10271d 100%);
+  box-shadow: 0 0 28px rgb(73 255 175 / 30%), inset -12px -16px 30px rgb(0 36 24 / 50%), inset 8px 8px 22px rgb(255 255 255 / 28%);
+}
+.orb:before,
+.orb:after { border-color: #a9ffdc66; }
+.orb:focus-visible { outline: 3px solid var(--cyan); outline-offset: 8px; }
+
+.upgrade,
+.player-id-card,
+.codeitem {
+  background: #0b1c15;
+  border-color: #244b38;
+  border-radius: 8px;
+}
+.upgrade:hover { border-color: #438860; }
+.bulkbar button.on { background: #143b2b; border-color: #42a873; color: var(--cyan); }
+.bulkbar.sell button.on { background: #352139; border-color: #99579a; color: #ffc0f1; }
+.bulkbar input,
+input[type=text],
+textarea {
+  background: #081710;
+  border-color: #2b5941;
+}
+.bar { background: #07130e; }
+.bar span { background: linear-gradient(90deg, #55f0a6, #85e7d0); }
+.owner-panel { border-color: #7e6833; }
+.toast { background: #153329; border-color: #4b9b70; }
+.codechip { background: #122b20; }
+.modal .box { background: var(--panel); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

@@ -96,7 +96,7 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 </head>
 <body>
 <div class="wrap">
- <div class="top"><div><div class="brand">ENERGY LAB // 4.3</div><div class="sub">Energy Lab V4.3 Pre-Release 1.0</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
+ <div class="top"><div><div class="brand">ENERGY LAB // 4.3</div><div class="sub">Energy Lab V4.3 Pre-Release 2</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
  <div class="warn" id="storeWarn" hidden>Saving isn't fully available in this embedded view, so progress may only last until you close the tab. Go to Settings and use Export save file or Copy save code to keep your progress.</div>
  <div class="boost" id="boost" hidden></div>
  <section class="stats">
@@ -1142,11 +1142,16 @@ $("addRebirthBtn").addEventListener("click", () => {
   const amount = readOwnerAmount("addRebirthAmount");
   if (amount === null) return;
 
+  const pointsPerRebirth = rpGain();
   state.rebirths += amount;
   state.totalRebirths += amount;
+  state.rp += pointsPerRebirth * amount;
+
+  checkAch();
   ui();
   save();
-  toast("Added " + amount + " rebirth" + (amount === 1 ? "." : "s."));
+  toast("Added " + amount + " rebirth" + (amount === 1 ? "" : "s") +
+    " and " + pointsPerRebirth * amount + " RP.");
 });
 
 $("addAscensionBtn").addEventListener("click", () => {
@@ -1154,10 +1159,15 @@ $("addAscensionBtn").addEventListener("click", () => {
   const amount = readOwnerAmount("addAscensionAmount");
   if (amount === null) return;
 
+  const pointsPerAscension = apGain();
   state.ascensions += amount;
+  state.ap += pointsPerAscension * amount;
+
+  checkAch();
   ui();
   save();
-  toast("Added " + amount + " ascension" + (amount === 1 ? "." : "s."));
+  toast("Added " + amount + " ascension" + (amount === 1 ? "" : "s") +
+    " and " + pointsPerAscension * amount + " AP.");
 });
 $("ownerMultiplierRange").addEventListener("input", e => {
   if (!IS_OWNER) return;

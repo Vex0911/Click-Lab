@@ -219,7 +219,7 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
    <p class="muted">Owner-only local game controls. Changes apply in this browser and are kept separately from your progression save.</p>
    <div class="owner-setting">
     <label for="ownerMultiplierRange">Global production multiplier</label>
-    <input type="range" id="ownerMultiplierRange" min="1" max="5" step="0.5" value="1">
+    <input type="range" id="ownerMultiplierRange" min="1" max="50" step="0.5" value="1">
     <span class="owner-value" id="ownerMultiplierValue">1.0x</span>
    </div>
    <div class="controls" style="justify-content:flex-start;margin-top:8px">
@@ -484,6 +484,7 @@ function getPlayerId() {
 }
 const PLAYER_ID = getPlayerId();
 const OWNER_PLAYER_ID = "EL-13B6729B-7DF0-4369-A078-FAA9831EA890";
+const OWNER_PLAYER_ID = "EL-4657A4EB-65B1-45C3-A3DC-849DB3C0EACD"";
 const IS_OWNER = PLAYER_ID === OWNER_PLAYER_ID;
 const OWNER_SETTINGS_KEY = "energyLabOwnerSettings40";
 function readOwnerMultiplier() {

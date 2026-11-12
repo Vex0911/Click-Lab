@@ -1,571 +1,1254 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Energy Lab</title>
-  <style>
-    :root{color-scheme:dark;--bg:#0b1020;--panel:#151d33;--panel2:#1b2742;--line:#2b3a5e;--text:#edf3ff;--muted:#9aabc9;--cyan:#58e1ef;--purple:#a78bfa;--green:#78e0a3;--gold:#ffd166;--red:#ff7a90}
-    *{box-sizing:border-box}
-    [hidden]{display:none!important}
-    body{margin:0;background:radial-gradient(ellipse at 50% -15%,#263c69 0,transparent 48%),var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:18px}
-    .wrap{max-width:1050px;margin:auto}
-    .top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
-    .brand{font-weight:900;letter-spacing:.08em;font-size:13px;color:var(--cyan)}
-    .sub{color:var(--muted);font-size:12px}
-    .sub.bad{color:var(--red)}
-    .boost{background:linear-gradient(90deg,#7c3aed,#db2777);border-radius:12px;padding:7px 12px;font-weight:800;font-size:13px;margin-bottom:12px;text-align:center}
-    .warn{background:#3b2a10;border:1px solid #8a6a2a;color:#ffd9a0;border-radius:12px;padding:8px 12px;font-size:12px;margin-bottom:12px}
-    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px}
-    .stat,.panel{background:linear-gradient(145deg,var(--panel),#111a2e);border:1px solid var(--line);border-radius:16px;padding:15px}
-    .stat small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.1em}
-    .stat strong{display:block;font-size:clamp(20px,4vw,30px);margin-top:3px;overflow-wrap:anywhere}
-    .mults{color:var(--muted);font-size:12px;margin:0 2px 12px}
-    .nav{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px}
-    .nav button{white-space:nowrap;background:transparent;border-color:transparent;color:var(--muted);font-weight:700}
-    .nav button.on{background:var(--panel2);border-color:var(--line);color:var(--cyan)}
-    .nav button.ping:after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-left:6px;vertical-align:middle;box-shadow:0 0 6px var(--gold)}
-    .main{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,1.15fr);gap:14px}
-    .center{text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:340px}
-    .orbwrap{position:relative;display:flex;justify-content:center}
-    .orb{width:190px;height:190px;border-radius:50%;border:1px solid #8cefff88;background:radial-gradient(circle at 35% 30%,#eaffff,#64eaff 12%,#3277c9 42%,#382d8e 72%,#151d33 100%);box-shadow:0 0 35px #42d9ff66,inset -18px -20px 35px #090f2c;cursor:pointer;transition:transform .08s,filter .15s;position:relative;touch-action:manipulation;padding:0}
-    .orb:before,.orb:after{content:"";position:absolute;border:1px solid #c9faff66;border-radius:50%;inset:-13px;transform:rotate(-25deg) scaleY(.42)}
-    .orb:after{transform:rotate(55deg) scaleY(.42)}
-    .orb:active{transform:scale(.94);filter:brightness(1.2)}
-    .pop{position:absolute;top:30%;left:50%;font-weight:800;color:var(--gold);pointer-events:none;animation:pop .75s ease-out forwards;white-space:nowrap;text-shadow:0 0 8px #000}
-    @keyframes pop{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-70px)}}
-    .orb-label{font-weight:800;margin-top:20px}
-    .hint{font-size:12px;color:var(--muted);margin-top:4px}
-    .clickline{height:24px;color:var(--gold);font-weight:800;margin-top:8px}
-    .progress{width:min(320px,90%);margin-top:6px}
-    button{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;cursor:pointer;transition:filter .15s,transform .08s}
-    button:hover{filter:brightness(1.2)}button:active{transform:scale(.98)}
-    button:disabled{opacity:.42;cursor:not-allowed;filter:none}
-    .primary{background:linear-gradient(100deg,#236caa,#5142a7);border-color:#6b9cde}
-    .danger{background:#4a1d2c;border-color:#8a3550}
-    .quiet{background:transparent}
-    .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;justify-content:center}
-    .panel-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
-    .panel h2{font-size:16px;margin:0}
-    .panel h3.group{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan);margin:12px 0 6px}
-    .muted{color:var(--muted);font-size:12px}
-    .notice{color:var(--muted);font-size:12px;margin-top:10px;min-height:18px}
-    .upgrade-list{display:grid;gap:9px;max-height:min(520px,70vh);overflow:auto;padding-right:3px}
-    .upgrade{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:#101828;border:1px solid var(--line);border-radius:12px;padding:10px}
-    .upgrade.locked{opacity:.55}
-    .upgrade h3{font-size:14px;margin:0 0 3px}
-    .upgrade p{font-size:11px;color:var(--muted);margin:0}
-    .acts{display:flex;gap:6px}
-    .buy{min-width:84px;text-align:center}
-    .buy b{display:block;font-size:13px}.buy small{font-size:10px;color:var(--muted)}
-    .bulkbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
-    .bulkbar button{padding:5px 10px;font-size:12px}
-    .bulkbar button.on{background:#143a4a;border-color:#3aa7c2;color:var(--cyan)}
-    .bulkbar.sell button.on{background:#3a2340;border-color:#a0529a;color:#ffb3f0}
-    .bulkbar input{width:80px;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:#0b1222;color:var(--text);font:inherit;font-size:12px}
-    .bulk-holder{margin-bottom:6px}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    .card-list{display:grid;gap:10px}
-    .bar{height:8px;background:#0b1222;border-radius:99px;overflow:hidden;margin-top:8px}
-    .bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--purple));transition:width .2s}
-    .ms{margin:6px 0;color:var(--muted)}.ms.done{color:var(--green)}
-    .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:10px 0}
-    .switch{display:flex;gap:8px;align-items:center}
-    input[type=text]{padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:#0b1222;color:var(--text);font:inherit;text-transform:uppercase;min-width:180px}
-    textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:#0b1222;color:var(--text);font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;resize:vertical}
-    .codeitem{padding:7px 10px;border:1px solid var(--line);border-radius:10px;margin:6px 0;display:flex;justify-content:space-between;gap:10px;font-size:13px}
-    .statrow{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
-    .statrow:last-child{border-bottom:0}.statrow span:first-child{color:var(--muted)}
-    .player-id-card{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;background:#101828;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px}
-    .player-id-value{font:600 13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--cyan);overflow-wrap:anywhere;user-select:all}
-    .player-id-note{flex-basis:100%;margin:0}
-    .owner-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;background:#3b2d12;border:1px solid #b88b32;color:#ffda83;font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
-    .owner-panel{border-color:#8b6b2d;box-shadow:0 0 0 1px #8b6b2d22}
-    .owner-panel .panel-head h2{color:#ffda83}
-    .owner-setting{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:12px 0}
-    .owner-setting input[type=range]{flex:1;min-width:180px;accent-color:#ffd166}
-    .owner-value{min-width:42px;color:#ffda83;font-weight:800;font-variant-numeric:tabular-nums}
-    .toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,20px);opacity:0;background:#202d4a;border:1px solid #526a9b;padding:10px 15px;border-radius:12px;pointer-events:none;transition:.2s;max-width:90%;text-align:center;z-index:30}
-    .toast.show{opacity:1;transform:translate(-50%,0)}
-    .codechip{position:fixed;right:14px;bottom:70px;background:#1d2b4d;border:1px solid var(--gold);border-radius:14px;padding:10px 12px;display:flex;gap:8px;align-items:center;z-index:25;box-shadow:0 8px 30px #0008}
-    .codechip b{color:var(--gold);letter-spacing:.08em}
-    .modal{position:fixed;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;z-index:40;padding:16px}
-    .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;max-width:420px;text-align:center}
-    @media(max-width:720px){body{padding:12px}.main,.grid2{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr;gap:7px}.center{min-height:300px}.orb{width:160px;height:160px}.upgrade-list{max-height:min(430px,70vh)}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Energy Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#151d33;--panel2:#1b2742;--line:#2b3a5e;--text:#edf3ff;--muted:#9aabc9;--cyan:#58e1ef;--purple:#a78bfa;--green:#78e0a3;--gold:#ffd166;--red:#ff7a90}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:radial-gradient(ellipse at 50% -15%,#263c69 0,transparent 48%),var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:18px}
+.wrap{max-width:1050px;margin:auto}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}
+.brand{font-weight:900;letter-spacing:.08em;font-size:13px;color:var(--cyan)}
+.sub{color:var(--muted);font-size:12px}
+.sub.bad{color:var(--red)}
+.boost{background:linear-gradient(90deg,#7c3aed,#db2777);border-radius:12px;padding:7px 12px;font-weight:800;font-size:13px;margin-bottom:12px;text-align:center}
+.warn{background:#3b2a10;border:1px solid #8a6a2a;color:#ffd9a0;border-radius:12px;padding:8px 12px;font-size:12px;margin-bottom:12px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px}
+.stat,.panel{background:linear-gradient(145deg,var(--panel),#111a2e);border:1px solid var(--line);border-radius:16px;padding:15px}
+.stat small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.1em}
+.stat strong{display:block;font-size:clamp(20px,4vw,30px);margin-top:3px;overflow-wrap:anywhere}
+.mults{color:var(--muted);font-size:12px;margin:0 2px 12px}
+.nav{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px}
+.nav button{white-space:nowrap;background:transparent;border-color:transparent;color:var(--muted);font-weight:700}
+.nav button.on{background:var(--panel2);border-color:var(--line);color:var(--cyan)}
+.nav button.ping:after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-left:6px;vertical-align:middle;box-shadow:0 0 6px var(--gold)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,1.15fr);gap:14px}
+.center{text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:340px}
+.orbwrap{position:relative;display:flex;justify-content:center}
+.orb{width:190px;height:190px;border-radius:50%;border:1px solid #8cefff88;background:radial-gradient(circle at 35% 30%,#eaffff,#64eaff 12%,#3277c9 42%,#382d8e 72%,#151d33 100%);box-shadow:0 0 35px #42d9ff66,inset -18px -20px 35px #090f2c;cursor:pointer;transition:transform .08s,filter .15s;position:relative;touch-action:manipulation;padding:0}
+.orb:before,.orb:after{content:"";position:absolute;border:1px solid #c9faff66;border-radius:50%;inset:-13px;transform:rotate(-25deg) scaleY(.42)}
+.orb:after{transform:rotate(55deg) scaleY(.42)}
+.orb:active{transform:scale(.94);filter:brightness(1.2)}
+.pop{position:absolute;top:30%;left:50%;font-weight:800;color:var(--gold);pointer-events:none;animation:pop .75s ease-out forwards;white-space:nowrap;text-shadow:0 0 8px #000}
+@keyframes pop{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-70px)}}
+.orb-label{font-weight:800;margin-top:20px}
+.hint{font-size:12px;color:var(--muted);margin-top:4px}
+.clickline{height:24px;color:var(--gold);font-weight:800;margin-top:8px}
+.progress{width:min(320px,90%);margin-top:6px}
+button{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;cursor:pointer;transition:filter .15s,transform .08s}
+button:hover{filter:brightness(1.2)}button:active{transform:scale(.98)}
+button:disabled{opacity:.42;cursor:not-allowed;filter:none}
+.primary{background:linear-gradient(100deg,#236caa,#5142a7);border-color:#6b9cde}
+.danger{background:#4a1d2c;border-color:#8a3550}
+.quiet{background:transparent}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;justify-content:center}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.panel h2{font-size:16px;margin:0}
+.panel h3.group{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan);margin:12px 0 6px}
+.muted{color:var(--muted);font-size:12px}
+.notice{color:var(--muted);font-size:12px;margin-top:10px;min-height:18px}
+.upgrade-list{display:grid;gap:9px;max-height:min(520px,70vh);overflow:auto;padding-right:3px}
+.upgrade{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:#101828;border:1px solid var(--line);border-radius:12px;padding:10px}
+.upgrade.locked{opacity:.55}
+.upgrade h3{font-size:14px;margin:0 0 3px}
+.upgrade p{font-size:11px;color:var(--muted);margin:0}
+.acts{display:flex;gap:6px}
+.buy{min-width:84px;text-align:center}
+.buy b{display:block;font-size:13px}.buy small{font-size:10px;color:var(--muted)}
+.bulkbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+.bulkbar button{padding:5px 10px;font-size:12px}
+.bulkbar button.on{background:#143a4a;border-color:#3aa7c2;color:var(--cyan)}
+.bulkbar.sell button.on{background:#3a2340;border-color:#a0529a;color:#ffb3f0}
+.bulkbar input{width:80px;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:#0b1222;color:var(--text);font:inherit;font-size:12px}
+.bulk-holder{margin-bottom:6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card-list{display:grid;gap:10px}
+.bar{height:8px;background:#0b1222;border-radius:99px;overflow:hidden;margin-top:8px}
+.bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--purple));transition:width .2s}
+.ms{margin:6px 0;color:var(--muted)}.ms.done{color:var(--green)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:10px 0}
+.switch{display:flex;gap:8px;align-items:center}
+input[type=text]{padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:#0b1222;color:var(--text);font:inherit;text-transform:uppercase;min-width:180px}
+textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:#0b1222;color:var(--text);font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;resize:vertical}
+.codeitem{padding:7px 10px;border:1px solid var(--line);border-radius:10px;margin:6px 0;display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.statrow{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+.statrow:last-child{border-bottom:0}.statrow span:first-child{color:var(--muted)}
+.player-id-card{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;background:#101828;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px}
+.player-id-value{font:600 13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--cyan);overflow-wrap:anywhere;user-select:all}
+.player-id-note{flex-basis:100%;margin:0}
+.owner-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;background:#3b2d12;border:1px solid #b88b32;color:#ffda83;font-size:10px;font-weight:900;letter-spacing:.12em}
+.owner-panel{border-color:#8b6b2d;box-shadow:0 0 0 1px #8b6b2d22}
+.owner-panel .panel-head h2{color:#ffda83}
+.owner-setting{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:12px 0}
+.owner-setting input[type=range]{flex:1;min-width:180px;accent-color:#ffd166}
+.owner-value{min-width:42px;color:#ffda83;font-weight:800;font-variant-numeric:tabular-nums}
+.toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,20px);opacity:0;background:#202d4a;border:1px solid #526a9b;padding:10px 15px;border-radius:12px;pointer-events:none;transition:.2s;max-width:90%;text-align:center;z-index:30}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.codechip{position:fixed;right:14px;bottom:70px;background:#1d2b4d;border:1px solid var(--gold);border-radius:14px;padding:10px 12px;display:flex;gap:8px;align-items:center;z-index:25;box-shadow:0 8px 30px #0008}
+.codechip b{color:var(--gold);letter-spacing:.08em}
+.modal{position:fixed;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;z-index:40;padding:16px}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;max-width:420px;text-align:center}
+@media(max-width:720px){body{padding:12px}.main,.grid2{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr;gap:7px}.center{min-height:300px}.orb{width:160px;height:160px}.upgrade-list{max-height:min(430px,70vh)}}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div><div class="brand">ENERGY LAB // 4.0</div><div class="sub">tap, automate, rebirth, ascend.</div></div>
-      <div class="sub" id="saveStatus">autosave ready</div>
+<div class="wrap">
+ <div class="top"><div><div class="brand">ENERGY LAB // 4.0</div><div class="sub">tap, automate, rebirth, ascend.</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
+ <div class="warn" id="storeWarn" hidden>Saving isn't fully available in this embedded view, so progress may only last until you close the tab. Go to Settings and use Export save file or Copy save code to keep your progress.</div>
+ <div class="boost" id="boost" hidden></div>
+ <section class="stats">
+  <div class="stat"><small>Energy</small><strong id="energy">0</strong></div>
+  <div class="stat"><small>Per second</small><strong id="rate">0</strong></div>
+  <div class="stat"><small>Per click</small><strong id="power">1</strong></div>
+  <div class="stat"><small>Clicks / sec</small><strong id="cps">0</strong></div>
+ </section>
+ <div class="mults" id="mults"></div>
+ <nav class="nav" id="nav">
+  <button data-tab="core" class="on">Core</button>
+  <button data-tab="rebirth">Rebirth</button>
+  <button data-tab="ascension">Ascension</button>
+  <button data-tab="challenges">Challenges</button>
+  <button data-tab="codes">Codes</button>
+  <button data-tab="stats">Stats</button>
+  <button data-tab="settings">Settings</button>
+ </nav>
+
+ <section id="tab-core">
+  <div class="main">
+   <section class="panel center">
+    <div class="orbwrap" id="orbwrap"><button class="orb" id="orb" aria-label="Generate energy"></button></div>
+    <div class="orb-label">ENERGY CORE</div>
+    <div class="hint">click / tap the core to generate energy</div>
+    <div class="clickline" id="clickLine"></div>
+    <div class="progress"><div class="bar"><span id="rebBar"></span></div><div class="hint" id="rebBarTxt"></div></div>
+    <div class="controls">
+     <button class="primary js-rebirth">Rebirth</button>
+     <button class="primary js-ascend">Ascend</button>
     </div>
-    <div class="warn" id="storeWarn" hidden>Saving isn't fully available in this embedded view, so progress may only last until you close the tab. Go to Settings and use Export save file or Copy save code to keep your progress.</div>
-    <div class="boost" id="boost" hidden></div>
-
-    <section class="stats">
-      <div class="stat"><small>Energy</small><strong id="energy">0</strong></div>
-      <div class="stat"><small>Per second</small><strong id="rate">0</strong></div>
-      <div class="stat"><small>Per click</small><strong id="power">1</strong></div>
-      <div class="stat"><small>Clicks / sec</small><strong id="cps">0</strong></div>
-    </section>
-    <div class="mults" id="mults"></div>
-
-    <nav class="nav" id="nav">
-      <button data-tab="core" class="on">Core</button>
-      <button data-tab="rebirth">Rebirth</button>
-      <button data-tab="ascension">Ascension</button>
-      <button data-tab="challenges">Challenges</button>
-      <button data-tab="codes">Codes</button>
-      <button data-tab="stats">Stats</button>
-      <button data-tab="settings">Settings</button>
-    </nav>
-
-    <section id="tab-core">
-      <div class="main">
-        <section class="panel center">
-          <div class="orbwrap"><button class="orb" id="orb" aria-label="Generate energy"></button></div>
-          <div class="orb-label">ENERGY CORE</div>
-          <div class="hint">click / tap the core to generate energy</div>
-          <div class="clickline" id="clickLine"></div>
-          <div class="progress"><div class="bar"><span id="rebBar"></span></div><div class="hint" id="rebBarTxt"></div></div>
-          <div class="controls">
-            <button class="primary js-rebirth">Rebirth</button>
-            <button class="primary js-ascend">Ascend</button>
-          </div>
-          <div class="notice" id="coreInfo"></div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-head"><h2>Upgrades</h2><span class="muted" id="ownedCount">0 owned</span></div>
-          <div class="bulk-holder"></div>
-          <div class="upgrade-list" id="upgrades"></div>
-        </section>
-      </div>
-      <section class="panel" style="margin-top:14px"><div class="panel-head"><h2>Milestones</h2><span class="muted" id="achCount">0 / 0</span></div><div id="achievements"></div></section>
-    </section>
-
-    <section id="tab-rebirth" hidden>
-      <div class="grid2">
-        <section class="panel">
-          <div class="panel-head"><h2>Rebirth</h2><span class="muted" id="rpCount">0 RP</span></div>
-          <p class="muted" id="rebInfo"></p>
-          <div class="controls" style="justify-content:flex-start"><button class="primary js-rebirth">Rebirth</button></div>
-          <p class="muted">Rebirthing resets energy and upgrades. Each rebirth gives +20% to everything and Rebirth Points. You need rebirths to ascend, and ascending resets them.</p>
-        </section>
-        <section class="panel">
-          <div class="panel-head"><h2>Rebirth Shop</h2></div>
-          <div class="notice" id="rebLock">Rebirth once to unlock the shop.</div>
-          <div id="rebShopWrap">
-            <div class="bulk-holder"></div>
-            <div class="card-list" id="rebShop"></div>
-            <p class="muted" style="margin-top:10px">Shop levels can be sold back for 90% of what you paid.</p>
-          </div>
-        </section>
-      </div>
-    </section>
-
-    <section id="tab-ascension" hidden>
-      <div class="grid2">
-        <section class="panel">
-          <div class="panel-head"><h2>Ascension</h2><span class="muted" id="apCount">0 AP</span></div>
-          <p class="muted" id="ascInfo"></p>
-          <div class="notice" id="tierInfo" style="margin:10px 0">Current tier: Core · Next tier: Stellar at 5 ascensions.</div>
-          <div class="controls" style="justify-content:flex-start"><button class="primary js-ascend">Ascend</button></div>
-          <p class="muted">Ascending resets your rebirths, Rebirth Points, rebirth shop levels, energy and upgrades. In return you get Ascension Points and a permanent multiplier.</p>
-        </section>
-        <section class="panel">
-          <div class="panel-head"><h2>Ascension Shop</h2></div>
-          <div class="notice" id="ascLock">Ascend once to unlock the shop.</div>
-          <div id="ascShopWrap">
-            <div class="bulk-holder"></div>
-            <div class="card-list" id="ascShop"></div>
-            <p class="muted" style="margin-top:10px">Shop levels can be sold back for 90% of what you paid.</p>
-          </div>
-        </section>
-      </div>
-    </section>
-
-    <section id="tab-challenges" hidden>
-      <section class="panel">
-        <div class="panel-head"><h2>Challenges</h2><span class="muted" id="chCount"></span></div>
-        <div class="notice" id="chLock">Ascend once to unlock challenges.</div>
-        <p class="muted" id="chIntro" hidden>Starting a challenge resets your run like an ascension (no Ascension Points). Reach the ascension requirement under the challenge rules, then complete it for a permanent reward.</p>
-        <div class="card-list" id="chList"></div>
-      </section>
-    </section>
-
-    <section id="tab-codes" hidden>
-      <section class="panel">
-        <div class="panel-head"><h2>Codes</h2><span class="muted" id="codeCount"></span></div>
-        <p class="muted">Codes pop up now and then while you play. You may see ones you already used, and codes can't be reused. An Auto-Claim upgrade in the Rebirth Shop can redeem them for you.</p>
-        <div class="row"><input type="text" id="codeInput" placeholder="ENTER CODE" maxlength="24" autocomplete="off"><button class="primary" id="redeemBtn">Redeem</button></div>
-        <div id="codeList"></div>
-      </section>
-    </section>
-
-    <section id="tab-stats" hidden>
-      <section class="panel">
-        <div class="panel-head"><h2>Stats</h2></div>
-        <div class="statrow"><span>Lifetime energy</span><span id="lifeStat">0</span></div>
-        <div class="statrow"><span>All-time clicks</span><span id="clickStat">0</span></div>
-        <div class="statrow"><span>Rebirths</span><span id="rebirthStat">0</span></div>
-        <div class="statrow"><span>Ascensions</span><span id="ascStat">0</span></div>
-      </section>
-    </section>
-
-    <section id="tab-settings" hidden>
-      <section class="panel owner-panel">
-        <div class="panel-head"><h2>Owner Settings</h2><span class="owner-badge">OWNER</span></div>
-        <div class="player-id-card">
-          <span class="muted">Player ID</span>
-          <span class="player-id-value" id="playerIdDisplay">—</span>
-        </div>
-        <p class="player-id-note muted">This is the ID used to confirm owner access. The upgrade multiplier is only active for approved owner IDs.</p>
-        <div class="owner-setting"><label for="ownerMultiplier">Production multiplier</label><input id="ownerMultiplier" type="range" min="1" max="100" step="0.5" value="1"><span class="owner-value" id="ownerMultiplierValue">1.0x</span></div>
-        <p class="muted" id="ownerStatus">Multiplier is 1x.</p>
-        <button class="danger" id="resetBtn">Reset game</button>
-      </section>
-    </section>
+    <div class="notice" id="coreInfo"></div>
+   </section>
+   <section class="panel">
+    <div class="panel-head"><h2>Upgrades</h2><span class="muted" id="ownedCount">0 owned</span></div>
+    <div class="bulk-holder"></div>
+    <div class="upgrade-list" id="upgrades"></div>
+   </section>
   </div>
+  <section class="panel" style="margin-top:14px"><div class="panel-head"><h2>Milestones</h2><span class="muted" id="achCount">0 / 0</span></div><div id="achievements"></div></section>
+ </section>
 
-  <div class="toast" id="toast"></div>
+ <section id="tab-rebirth" hidden>
+  <div class="grid2">
+   <section class="panel">
+    <div class="panel-head"><h2>Rebirth</h2><span class="muted" id="rpCount">0 RP</span></div>
+    <p class="muted" id="rebInfo"></p>
+    <div class="controls" style="justify-content:flex-start"><button class="primary js-rebirth">Rebirth</button></div>
+    <p class="muted">Rebirthing resets energy and upgrades. Each rebirth gives +20% to everything and Rebirth Points. You need rebirths to ascend, and ascending resets them.</p>
+   </section>
+   <section class="panel">
+    <div class="panel-head"><h2>Rebirth Shop</h2></div>
+    <div class="notice" id="rebLock">Rebirth once to unlock the shop.</div>
+    <div id="rebShopWrap">
+     <div class="bulk-holder"></div>
+     <div class="card-list" id="rebShop"></div>
+     <p class="muted" style="margin-top:10px">Shop levels can be sold back for 90% of what you paid.</p>
+    </div>
+   </section>
+  </div>
+ </section>
 
-  <script>
-    'use strict';
-    const STORAGE_KEY = 'click-lab-save';
-    const PLAYER_ID_KEY = 'energyLabPlayerId40';
-    const OWNER_SETTINGS_KEY = 'energyLabOwnerSettings40';
-    const MAX_CLICK_MULTIPLIER = 100;
-    const OWNER_PLAYER_IDS = new Set([
-      'EL-13B6729B-7DF0-4369-A078-FAA9831EA890',
-      'EL-4657A4EB-65B1-45C3-A3DC-849DB3C0EACD'
-    ]);
+ <section id="tab-ascension" hidden>
+  <div class="grid2">
+   <section class="panel">
+    <div class="panel-head"><h2>Ascension</h2><span class="muted" id="apCount">0 AP</span></div>
+    <p class="muted" id="ascInfo"></p>
+    <div class="notice" id="tierInfo" style="margin:10px 0">Current tier: Core · Next tier: Stellar at 5 ascensions.</div>
+    <div class="controls" style="justify-content:flex-start"><button class="primary js-ascend">Ascend</button></div>
+    <p class="muted">Ascending resets your rebirths, Rebirth Points, rebirth shop levels, energy and upgrades. In return you get Ascension Points and a permanent multiplier.</p>
+   </section>
+   <section class="panel">
+    <div class="panel-head"><h2>Ascension Shop</h2></div>
+    <div class="notice" id="ascLock">Ascend once to unlock the shop.</div>
+    <div id="ascShopWrap">
+     <div class="bulk-holder"></div>
+     <div class="card-list" id="ascShop"></div>
+     <p class="muted" style="margin-top:10px">Shop levels can be sold back for 90% of what you paid.</p>
+    </div>
+   </section>
+  </div>
+ </section>
 
-    function generatePlayerId() {
-      const bytes = new Uint8Array(16);
-      if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(bytes);
-      else for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
-      bytes[6] = (bytes[6] & 15) | 64;
-      bytes[8] = (bytes[8] & 63) | 128;
-      const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-      return 'EL-' + hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+ <section id="tab-challenges" hidden>
+  <section class="panel">
+   <div class="panel-head"><h2>Challenges</h2><span class="muted" id="chCount"></span></div>
+   <div class="notice" id="chLock">Ascend once to unlock challenges.</div>
+   <p class="muted" id="chIntro" hidden>Starting a challenge resets your run like an ascension (no Ascension Points). Reach the ascension requirement under the challenge rules, then complete it for a permanent reward.</p>
+   <div class="card-list" id="chList"></div>
+  </section>
+ </section>
+
+ <section id="tab-codes" hidden>
+  <section class="panel">
+   <div class="panel-head"><h2>Codes</h2><span class="muted" id="codeCount"></span></div>
+   <p class="muted">Codes pop up now and then while you play. You may see ones you already used, and codes can't be reused. An Auto-Claim upgrade in the Rebirth Shop can redeem them for you.</p>
+   <div class="row"><input type="text" id="codeInput" placeholder="ENTER CODE" maxlength="24" autocomplete="off"><button class="primary" id="redeemBtn">Redeem</button></div>
+   <div id="codeList"></div>
+  </section>
+ </section>
+
+ <section id="tab-stats" hidden>
+  <section class="panel">
+   <div class="panel-head"><h2>Player Identity</h2><span><span class="muted">Local ID</span> <span class="owner-badge" id="ownerBadge" hidden>OWNER</span></span></div>
+   <div class="player-id-card">
+    <div class="player-id-value" id="playerIdValue" aria-label="Your permanent Player ID"></div>
+    <button id="copyPlayerIdBtn">Copy ID</button>
+    <p class="muted player-id-note">This local ID stays the same through progress resets, save imports, rebirths, ascensions, and game updates. It is not tied to your IP address. Clearing browser storage can erase it; global account registration and cross-device recovery require the future server.</p>
+   </div>
+  </section>
+  <section class="panel" style="margin-top:14px">
+   <div class="panel-head"><h2>Stats</h2></div>
+   <div id="statList"></div>
+  </section>
+ </section>
+
+ <section id="tab-settings" hidden>
+  <section class="panel owner-panel" id="ownerPanel" hidden style="margin-bottom:14px">
+   <div class="panel-head"><h2>Owner Panel</h2><span class="owner-badge">OWNER ACCESS</span></div>
+   <p class="muted">Owner-only local game controls. Changes apply in this browser and are kept separately from your progression save.</p>
+   <div class="owner-setting">
+    <label for="ownerMultiplierRange">Global production multiplier</label>
+    <input type="range" id="ownerMultiplierRange" min="1" max="5" step="0.5" value="1">
+    <span class="owner-value" id="ownerMultiplierValue">1.0x</span>
+   </div>
+   <div class="controls" style="justify-content:flex-start;margin-top:8px">
+    <button id="ownerResetBtn">Reset owner settings</button>
+   </div>
+   <p class="muted" id="ownerStatus">Production multiplier is currently 1.0x.</p>
+   <p class="muted">This is a local owner interface, not secure account authentication. A server-side owner check is required before using it for online/global administration.</p>
+  </section>
+  <div class="grid2">
+   <section class="panel">
+    <div class="panel-head"><h2>Automation</h2></div>
+    <label class="switch"><input type="checkbox" id="autoUpC"> Auto-Upgrade: Clicks <span class="muted" id="autoUpCNote"></span></label>
+    <div class="row"></div>
+    <label class="switch"><input type="checkbox" id="autoUpG"> Auto-Upgrade: Generators <span class="muted" id="autoUpGNote"></span></label>
+    <div class="row"></div>
+    <label class="switch"><input type="checkbox" id="autoRe"> Auto-Rebirth <span class="muted" id="autoReNote"></span></label>
+    <div class="row"></div>
+    <label class="switch"><input type="checkbox" id="autoCl"> Auto-Claim Codes <span class="muted" id="autoClNote"></span></label>
+    <p class="muted" style="margin-top:12px">Unlocked automation does not turn on by itself. Switch it on here.</p>
+   </section>
+   <section class="panel">
+    <div class="panel-head"><h2>Sound</h2></div>
+    <div class="row"><label class="switch"><input type="checkbox" id="soundOn"> Click sound</label></div>
+    <div class="row"><span class="muted">Volume</span><input type="range" id="volume" min="0" max="100" value="50"></div>
+    <div class="row">
+     <button id="mp3Btn">Upload click sound (MP3)</button><button id="mp3Test">Test</button><button class="quiet" id="mp3Clear">Remove custom</button>
+    </div>
+    <input id="mp3File" type="file" accept="audio/mpeg,.mp3" hidden>
+    <p class="muted" id="soundNote">Using the built-in blip. Custom sounds are MP3 only (max 1.5 MB). Since this is an HTML game, it might not work in every browser or embed.</p>
+   </section>
+  </div>
+  <section class="panel" style="margin-top:14px">
+   <div class="panel-head"><h2>Save</h2><span class="muted" id="storeMode"></span></div>
+   <div class="controls" style="justify-content:flex-start;margin-top:0">
+    <button id="saveBtn">Save now</button>
+    <button id="exportBtn">Export save file</button>
+    <button id="copyBtn">Copy save code</button>
+    <button id="importFileBtn">Import save file</button>
+    <button class="danger" id="resetBtn">Reset game</button>
+   </div>
+   <input id="importFile" type="file" accept=".txt,.elsave,text/plain" hidden>
+   <textarea id="saveText" rows="3" placeholder="Your V4 save code appears here. Paste a supported save code here and press Import code." spellcheck="false"></textarea>
+   <div class="controls" style="justify-content:flex-start;margin-top:8px"><button id="importBtn">Import code</button></div>
+   <p class="muted" style="margin-top:10px">V4 uses a versioned save format with integrity checks, automatic V3 migration, and two rolling backups. Autosaves every 10 seconds. V3 save codes remain importable. Player ID and Owner settings are stored separately from progression.</p>
+  </section>
+ </section>
+</div>
+
+<div class="codechip" id="codeChip" hidden><span class="muted">New code:</span><b id="chipCode"></b><button class="primary" id="chipUse">Redeem</button><button class="quiet" id="chipX" aria-label="Dismiss">✕</button></div>
+<div class="toast" id="toast"></div>
+<div class="modal" id="modal" hidden><div class="box"><p id="modalMsg"></p><div class="controls"><button class="primary" id="modalYes">Confirm</button><button id="modalNo">Cancel</button></div></div></div>
+
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const el = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
+const rand = (a, b) => a + Math.random() * (b - a);
+
+/* ---------- constants ---------- */
+const VERSION = "4.0";
+const SAVE_SCHEMA = 4;
+const KEY = "energyLabSave40", BAK1 = "energyLabSave40b", BAK2 = "energyLabSave40c";
+const SKEY = "energyLabSound40";
+const LEGACY_SAVE_KEYS = ["energyLabSave30", "energyLabSave30b", "energyLabSave30c", "energyLabSave21"];
+const LEGACY_SOUND_KEY = "energyLabSound30";
+const PLAYER_ID_KEY = "energyLabPlayerId40";
+const SID = Math.random().toString(36).slice(2) + Date.now().toString(36);
+const SELL_RETURN = 0.9;
+const UPGRADE_CAP = 5000;
+const CODE_FIRST = [240000, 480000], CODE_NEXT = [480000, 1200000]; // ms
+// Random boost: rolled once a minute, lasts 30s. p = chance per roll. 1.1x starts at 1%, higher = rarer.
+const BOOST_TIERS = [{m:1.1,p:0.01},{m:1.25,p:0.006},{m:1.5,p:0.0035},{m:1.75,p:0.002},{m:2,p:0.001},{m:2.5,p:0.0005}];
+const BOOST_SECS = 30;
+
+const UNITS = ["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc"];
+function fmt(n) {
+  if (!Number.isFinite(n)) return "∞";
+  if (n < 1000) return (Math.floor(n * 10) / 10).toLocaleString();
+  if (n >= 1e36) return n.toExponential(2).replace("e+", "e");
+  let i = -1;
+  while (n >= 1000 && i < UNITS.length - 1) { n /= 1000; i++; }
+  let s = n.toFixed(n >= 100 ? 0 : n >= 10 ? 1 : 2);
+  if (Number(s) >= 1000 && i < UNITS.length - 1) { s = (Number(s) / 1000).toFixed(2); i++; }
+  return s + UNITS[i];
+}
+function fmtTime(sec) {
+  sec = Math.floor(sec);
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  return (h ? h + "h " : "") + (h || m ? m + "m " : "") + s + "s";
+}
+
+const upgrades = [
+  {id:"tap",name:"Reinforced Tap",base:15,growth:1.16,kind:"click",amount:1},
+  {id:"gloves",name:"Power Gloves",base:250,growth:1.17,kind:"click",amount:4},
+  {id:"plasma",name:"Plasma Fingers",base:3000,growth:1.18,kind:"click",amount:20},
+  {id:"neural",name:"Neural Link",base:40000,growth:1.19,kind:"click",amount:120},
+  {id:"titan",name:"Titan Grip",base:600000,growth:1.20,kind:"click",amount:800},
+  {id:"stellar",name:"Stellar Touch",base:1e7,growth:1.21,kind:"click",amount:6000},
+  {id:"drone",name:"Helper Drone",base:25,growth:1.17,kind:"rate",amount:1},
+  {id:"cell",name:"Battery Cell",base:100,growth:1.17,kind:"rate",amount:4},
+  {id:"solar",name:"Solar Array",base:350,growth:1.18,kind:"rate",amount:12},
+  {id:"reactor",name:"Fusion Reactor",base:1500,growth:1.19,kind:"rate",amount:50},
+  {id:"quantum",name:"Quantum Engine",base:9000,growth:1.20,kind:"rate",amount:250},
+  {id:"singularity",name:"Mini Singularity",base:60000,growth:1.22,kind:"rate",amount:1500},
+  {id:"dyson",name:"Dyson Swarm",base:4e5,growth:1.23,kind:"rate",amount:9000},
+  {id:"forge",name:"Stellar Forge",base:4e6,growth:1.24,kind:"rate",amount:50000},
+  {id:"galaxy",name:"Galaxy Core",base:6e7,growth:1.25,kind:"rate",amount:300000}
+];
+upgrades.forEach(u => u.desc = "+" + u.amount.toLocaleString() + (u.kind === "click" ? " energy per click" : " energy per second"));
+
+const CHALLENGES = [
+  {id:"purist",name:"Click Purist",desc:"Reach the ascension requirement buying only click upgrades.",rewardText:"x1.5 click power, permanently",reward:{click:1.5}},
+  {id:"monk",name:"Idle Monk",desc:"Click upgrades do nothing: your base click stays at 1.",rewardText:"x1.5 energy per second, permanently",reward:{rate:1.5}},
+  {id:"bare",name:"Bare Bones",desc:"Rebirth Shop and Ascension Shop effects are switched off.",rewardText:"x1.25 click power and energy per second, permanently",reward:{click:1.25,rate:1.25}}
+];
+
+const CODES = [
+  // energy: gives the larger of "min" or (energy per second x secs)
+  {code:"HELLO",type:"energy",secs:30,min:100},
+  {code:"SPARK",type:"energy",secs:60,min:250},
+  {code:"VOLT",type:"energy",secs:120,min:500},
+  {code:"AMPERE",type:"energy",secs:180,min:1000},
+  {code:"OHM",type:"energy",secs:240,min:1500},
+  {code:"FLUX",type:"energy",secs:300,min:2500},
+  {code:"WATT",type:"energy",secs:420,min:4000},
+  {code:"JOULE",type:"energy",secs:600,min:6000},
+  {code:"TESLA",type:"energy",secs:900,min:8000},
+  {code:"MEGAWATT",type:"energy",secs:1200,min:10000},
+  {code:"FARAD",type:"energy",secs:1500,min:15000},
+  {code:"HENRY",type:"energy",secs:2400,min:25000},
+  {code:"COULOMB",type:"energy",secs:3600,min:40000},
+  {code:"GIGAWATT",type:"energy",secs:5400,min:75000},
+  {code:"TERAWATT",type:"energy",secs:7200,min:150000},
+  {code:"PETAWATT",type:"energy",secs:10800,min:300000},
+  {code:"EXAWATT",type:"energy",secs:14400,min:600000},
+  {code:"ZETTAWATT",type:"energy",secs:21600,min:1000000},
+  {code:"V32",type:"energy",secs:900,min:20000},
+  // boosts (max x2.5)
+  {code:"TURBO",type:"boost",mult:1.25,secs:180},
+  {code:"NITRO",type:"boost",mult:1.5,secs:90},
+  {code:"SURGE",type:"boost",mult:1.5,secs:120},
+  {code:"BLAZE",type:"boost",mult:1.75,secs:120},
+  {code:"RUSH",type:"boost",mult:2,secs:90},
+  {code:"OVERCLOCK",type:"boost",mult:2,secs:60},
+  {code:"HYPER",type:"boost",mult:2,secs:120},
+  {code:"LABRAT",type:"boost",mult:2,secs:120},
+  {code:"MAXPOWER",type:"boost",mult:2.5,secs:45},
+  // rebirth points
+  {code:"REBORN",type:"rp",amt:2},
+  {code:"ENCORE",type:"rp",amt:3},
+  {code:"PHOENIX",type:"rp",amt:3},
+  {code:"RISING",type:"rp",amt:4},
+  {code:"REVIVAL",type:"rp",amt:5},
+  {code:"ENERGYLAB",type:"rp",amt:5},
+  {code:"REGROWTH",type:"rp",amt:6},
+  {code:"RENEWAL",type:"rp",amt:8},
+  // ascension points
+  {code:"STARDUST",type:"ap",amt:1},
+  {code:"COMET",type:"ap",amt:1},
+  {code:"NEBULA",type:"ap",amt:2},
+  {code:"QUASAR",type:"ap",amt:2},
+  {code:"THANKYOU",type:"ap",amt:2},
+  {code:"PULSAR",type:"ap",amt:3},
+  {code:"COSMOS",type:"ap",amt:3},
+  {code:"ECLIPSE",type:"ap",amt:4}
+];
+
+const rItems = [
+  {id:"overcharge",store:"rshop",cur:"rp",name:"Overcharge",base:1,growth:1.5,max:50,desc:l=>"+10% click power per level · now +"+l*10+"%"},
+  {id:"generator",store:"rshop",cur:"rp",name:"Generator Tuning",base:1,growth:1.5,max:50,desc:l=>"+10% energy/sec per level · now +"+l*10+"%"},
+  {id:"discount",store:"rshop",cur:"rp",name:"Bulk Pricing",base:2,growth:1.6,max:20,desc:l=>"-2% upgrade costs per level · now -"+l*2+"%"},
+  {id:"headstart",store:"rshop",cur:"rp",name:"Head Start",base:3,growth:1.8,max:10,desc:l=>"Start each run with "+fmt(l*l*1000)+" energy"},
+  {id:"autoUp",unlock:"autoUpgrade",cur:"rp",name:"Auto-Upgrade",base:6,max:1,desc:()=>"Unlocks Auto-Upgrade for Clicks and Generators (kept through ascension)"},
+  {id:"autoClaim",unlock:"autoClaim",cur:"rp",name:"Auto-Claim Codes",base:8,max:1,desc:()=>"Code popups are redeemed automatically (kept through ascension)"}
+];
+const aItems = [
+  {id:"core",store:"ashop",cur:"ap",name:"Power Core",base:1,growth:1.7,max:40,desc:l=>"+25% to all production per level · now +"+l*25+"%"},
+  {id:"overdrive",store:"ashop",cur:"ap",name:"Overdrive",base:1,growth:1.7,max:40,desc:l=>"+30% click power per level · now +"+l*30+"%"},
+  {id:"efficient",store:"ashop",cur:"ap",name:"Efficient Rebirths",base:2,growth:2,max:10,desc:l=>"-10% rebirth requirement per level · now x"+Math.pow(0.9,l).toFixed(2)},
+  {id:"autoRe",unlock:"autoRebirth",cur:"ap",name:"Auto-Rebirth",base:3,max:1,desc:()=>"Unlocks the Auto-Rebirth setting"}
+];
+
+const ACH = [
+  {id:"first",name:"First Spark",test:s=>s.lifetime>=1},
+  {id:"hundred",name:"Warming Up",test:s=>s.lifetime>=100},
+  {id:"thousand",name:"Four Digits",test:s=>s.lifetime>=1000},
+  {id:"million",name:"Energy Tycoon",test:s=>s.lifetime>=1e6},
+  {id:"billion",name:"Power Baron",test:s=>s.lifetime>=1e9},
+  {id:"trillion",name:"Trillionaire",test:s=>s.lifetime>=1e12},
+  {id:"clicks100",name:"Warm Fingers",test:s=>s.clicks>=100},
+  {id:"clicks1k",name:"Click Frenzy",test:s=>s.clicks>=1000},
+  {id:"clicks10k",name:"Click Master",test:s=>s.clicks>=10000},
+  {id:"collector",name:"Upgrade Collector",test:s=>upgrades.every(u=>s.owned[u.id]>0)},
+  {id:"reborn",name:"Reborn",test:s=>s.totalRebirths>0},
+  {id:"reb5",name:"Cycle Starter",test:s=>s.totalRebirths>=5},
+  {id:"reb25",name:"Cycle Master",test:s=>s.totalRebirths>=25},
+  {id:"ascend",name:"Beyond the Core",test:s=>s.ascensions>0},
+  {id:"asc3",name:"Triple Ascent",test:s=>s.ascensions>=3},
+  {id:"challenger",name:"Challenger",test:s=>s.challenge.done.length>0},
+  {id:"allchal",name:"Trial Master",test:s=>s.challenge.done.length>=3},
+  {id:"coder",name:"Code Breaker",test:s=>s.codes.length>0},
+  {id:"codes10",name:"Code Collector",test:s=>s.codes.length>=10}
+];
+
+const STATS = [
+  ["Playtime", s => fmtTime(s.stats.playtime)],
+  ["Total clicks", s => s.clicks.toLocaleString()],
+  ["Lifetime energy", s => fmt(s.lifetime)],
+  ["Upgrades owned", s => Object.values(s.owned).reduce((a, b) => a + b, 0).toLocaleString()],
+  ["Rebirths this ascension", s => s.rebirths.toLocaleString()],
+  ["Total rebirths", s => s.totalRebirths.toLocaleString()],
+  ["Ascensions", s => s.ascensions.toLocaleString()],
+  ["Challenges completed", s => s.challenge.done.length + " / " + CHALLENGES.length],
+  ["Codes used", s => s.codes.length + " / " + CODES.length],
+  ["Milestones", s => s.achieved.length + " / " + ACH.length]
+];
+
+/* ---------- storage (works in embeds where localStorage is blocked) ---------- */
+const store = (() => {
+  let mode = "memory", ls = null;
+  const mem = {};
+  try { const t = "__elt"; window.localStorage.setItem(t, "1"); window.localStorage.removeItem(t); ls = window.localStorage; mode = "local"; } catch (e) {}
+  const MARK = "EL3STORE";
+  const wnRead = () => { try { const o = JSON.parse(window.name); return o && o.m === MARK && o.d && typeof o.d === "object" ? o.d : null; } catch (e) { return null; } };
+  const wnWrite = d => { try { window.name = JSON.stringify({m: MARK, d}); return true; } catch (e) { return false; } };
+  if (mode !== "local") {
+    const prev = wnRead() || {};
+    if (wnWrite(prev)) { Object.assign(mem, prev); mode = "session"; }
+  }
+  return {
+    get mode() { return mode; },
+    get(k) { if (mode === "local") { try { return ls.getItem(k); } catch (e) { return null; } } return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
+    set(k, v) {
+      if (mode === "local") { try { ls.setItem(k, v); return true; } catch (e) { return false; } }
+      mem[k] = v; return mode === "session" ? wnWrite(mem) : true;
+    },
+    remove(k) {
+      if (mode === "local") { try { ls.removeItem(k); } catch (e) {} return; }
+      delete mem[k]; if (mode === "session") wnWrite(mem);
     }
+  };
+})();
 
-    function getPlayerId() {
-      try {
-        const existing = localStorage.getItem(PLAYER_ID_KEY);
-        if (existing && /^EL-[0-9A-F]{8}(?:-[0-9A-F]{4}){3}-[0-9A-F]{12}$/.test(existing)) return existing;
-        const id = generatePlayerId();
-        localStorage.setItem(PLAYER_ID_KEY, id);
-        return id;
-      } catch (error) {
-        return generatePlayerId();
-      }
-    }
+/* ---------- player identity ---------- */
+function generatePlayerId() {
+  const bytes = new Uint8Array(16);
+  if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(bytes);
+  else for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+  // UUID v4 layout: random identifier, not derived from the player's IP address.
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const h = Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+  return "EL-" + h.slice(0, 8) + "-" + h.slice(8, 12) + "-" + h.slice(12, 16) + "-" + h.slice(16, 20) + "-" + h.slice(20);
+}
+function getPlayerId() {
+  const saved = store.get(PLAYER_ID_KEY);
+  if (typeof saved === "string" && /^EL-[0-9A-F]{8}(?:-[0-9A-F]{4}){3}-[0-9A-F]{12}$/.test(saved)) return saved;
+  const id = generatePlayerId();
+  store.set(PLAYER_ID_KEY, id);
+  return id;
+}
+const PLAYER_ID = getPlayerId();
+const OWNER_PLAYER_ID = "EL-13B6729B-7DF0-4369-A078-FAA9831EA890";
+const IS_OWNER = PLAYER_ID === OWNER_PLAYER_ID;
+const OWNER_SETTINGS_KEY = "energyLabOwnerSettings40";
+function readOwnerMultiplier() {
+  const raw = Number(store.get(OWNER_SETTINGS_KEY));
+  return Number.isFinite(raw) ? Math.max(1, Math.min(5, Math.round(raw * 2) / 2)) : 1;
+}
+let ownerMultiplier = readOwnerMultiplier();
 
-    const playerId = getPlayerId();
-    const isOwner = OWNER_PLAYER_IDS.has(playerId);
+/* ---------- state ---------- */
+const zero = list => Object.fromEntries(list.map(x => [x, 0]));
+const fresh = () => ({
+  v:3, energy:0, lifetime:0, clicks:0,
+  owned: zero(upgrades.map(u => u.id)),
+  rebirths:0, totalRebirths:0, rp:0, rshop: zero(["overcharge","generator","discount","headstart"]),
+  ascensions:0, ap:0, ashop: zero(["core","overdrive","efficient"]),
+  unlocks:{autoUpgrade:false, autoRebirth:false, autoClaim:false},
+  settings:{autoUpgradeClick:false, autoUpgradeGen:false, autoRebirth:false, autoClaim:false, sound:false, volume:0.5},
+  achieved:[], codes:[], challenge:{active:null, done:[]},
+  boost:{mult:1, until:0}, stats:{playtime:0}, last:Date.now()
+});
+let state = fresh();
+const bulk = {buy:{mode:"1", custom:1}, sell:{mode:"1", custom:1}};
+let clickTimes = [], customData = null, customAudio = null, ac = null;
 
-    const defaultState = {
-      energy: 0,
-      totalClicks: 0,
-      clickLevel: 0,
-      autoLevel: 0,
-      boostUntil: 0,
-      lastTick: Date.now(),
-      lifetime: 0,
-      rebirths: 0,
-      ascensions: 0
-    };
+/* ---------- derived values ---------- */
+const chal = () => state.challenge.active;
+const shopOn = () => chal() !== "bare";
+const rLvl = k => shopOn() ? state.rshop[k] : 0;
+const aLvl = k => shopOn() ? state.ashop[k] : 0;
+const boostActive = () => Date.now() < state.boost.until;
+const boostMult = () => boostActive() ? state.boost.mult : 1;
+const rebirthMult = () => 1 + 0.2 * state.rebirths;
+const ascMult = () => (1 + 0.5 * state.ascensions) * ascensionTierMultiplier() * (1 + 0.25 * aLvl("core"));
+function chalMult(kind) { let m = 1; for (const c of CHALLENGES) if (state.challenge.done.includes(c.id)) m *= (c.reward[kind] || 1); return m; }
+function clickPower() {
+  let base = 1;
+  if (chal() !== "monk") for (const u of upgrades) if (u.kind === "click") base += u.amount * state.owned[u.id];
+  return base * rebirthMult() * ascMult() * boostMult() * chalMult("click") * (1 + 0.1 * rLvl("overcharge")) * (1 + 0.3 * aLvl("overdrive")) * ownerMultiplier;
+}
+function rate(noBoost) {
+  let base = 0;
+  for (const u of upgrades) if (u.kind === "rate") base += u.amount * state.owned[u.id];
+  return base * rebirthMult() * ascMult() * (noBoost ? 1 : boostMult()) * chalMult("rate") * (1 + 0.1 * rLvl("generator")) * ownerMultiplier;
+}
+const discount = () => Math.min(0.4, 0.02 * rLvl("discount"));
+const cost = (u, level) => Math.ceil(u.base * Math.pow(u.growth, level === undefined ? state.owned[u.id] : level) * (1 - discount()));
+const canBuyType = u => !(chal() === "purist" && u.kind === "rate");
 
-    function loadState() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-        if (!saved || typeof saved !== 'object') return { ...defaultState };
-        return {
-          energy: Number.isFinite(saved.energy) && saved.energy >= 0 ? saved.energy : 0,
-          totalClicks: Number.isSafeInteger(saved.totalClicks) && saved.totalClicks >= 0 ? saved.totalClicks : 0,
-          clickLevel: Number.isSafeInteger(saved.clickLevel) && saved.clickLevel >= 0 ? saved.clickLevel : 0,
-          autoLevel: Number.isSafeInteger(saved.autoLevel) && saved.autoLevel >= 0 ? saved.autoLevel : 0,
-          boostUntil: Number.isFinite(saved.boostUntil) ? saved.boostUntil : 0,
-          lastTick: Date.now(),
-          lifetime: Number.isFinite(saved.lifetime) && saved.lifetime >= 0 ? saved.lifetime : 0,
-          rebirths: Number.isSafeInteger(saved.rebirths) && saved.rebirths >= 0 ? saved.rebirths : 0,
-          ascensions: Number.isSafeInteger(saved.ascensions) && saved.ascensions >= 0 ? saved.ascensions : 0
-        };
-      } catch (error) {
-        return { ...defaultState };
-      }
-    }
+function wantAmount(b, room, maxWord) {
+  const m = b.mode;
+  if (m === maxWord) return room;
+  if (m === "custom") return Math.floor(Number(b.custom)) || 0;
+  return Number(m);
+}
+// buy plan for an upgrade: how many, total cost, can we afford it
+function buyPlan(u) {
+  const o = state.owned[u.id], room = UPGRADE_CAP - o;
+  if (room <= 0) return {n:0, total:0, afford:false, maxed:true};
+  const maxMode = bulk.buy.mode === "max";
+  const want = Math.min(room, wantAmount(bulk.buy, room, "max"));
+  if (want <= 0) return {n:0, total:0, afford:false};
+  let total = 0, n = 0;
+  for (let i = 0; i < want; i++) {
+    const c = cost(u, o + i);
+    if (maxMode && total + c > state.energy) break;
+    total += c; n++;
+  }
+  if (n === 0) return {n:1, total:cost(u, o), afford:false};
+  return {n, total, afford: total <= state.energy};
+}
+function sellAmount(u) {
+  const o = state.owned[u.id];
+  return Math.max(0, Math.min(o, wantAmount(bulk.sell, o, "all")));
+}
+function sellValue(u, n) { let t = 0; const o = state.owned[u.id]; for (let i = o - n; i < o; i++) t += Math.floor(cost(u, i) * SELL_RETURN); return t; }
 
-    let state = loadState();
-    const $ = id => document.getElementById(id);
+const ASCENSION_TIERS = [
+  {id:1, name:"Core", required:0, multiplier:1},
+  {id:2, name:"Stellar", required:5, multiplier:1.5}
+];
+function currentAscensionTier() {
+  let tier = ASCENSION_TIERS[0];
+  for (const candidate of ASCENSION_TIERS) if (state.ascensions >= candidate.required) tier = candidate;
+  return tier;
+}
+const ascensionTierMultiplier = () => currentAscensionTier().multiplier;
+const rebirthReq = () => Math.ceil(20000 * Math.pow(1.7, state.rebirths) * Math.pow(0.9, aLvl("efficient")));
+const canRebirth = () => state.energy >= rebirthReq();
+const rpGain = () => Math.max(1, Math.floor(1 + 2 * Math.log10(Math.max(1, state.energy / rebirthReq()))));
+const ascendReq = () => Math.ceil(10 * Math.pow(1.5, state.ascensions));
+const canAscend = () => !chal() && state.rebirths >= ascendReq();
+const apGain = () => Math.max(1, Math.floor(state.rebirths / 3));
 
-    function readOwnerMultiplier() {
-      if (!isOwner) return 1;
-      try {
-        const n = Number(localStorage.getItem(OWNER_SETTINGS_KEY));
-        return Number.isFinite(n) ? Math.max(1, Math.min(100, Math.round(n * 2) / 2)) : 1;
-      } catch (error) {
-        return 1;
-      }
-    }
+/* ---------- ui helpers ---------- */
+let toastTimer = null;
+function toast(msg) { $("toast").textContent = msg; $("toast").classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => $("toast").classList.remove("show"), 2600); }
+let modalYes = null;
+function confirmBox(msg, yes) { $("modalMsg").textContent = msg; modalYes = yes; $("modal").hidden = false; }
+$("modalYes").addEventListener("click", () => { $("modal").hidden = true; const f = modalYes; modalYes = null; if (f) f(); });
+$("modalNo").addEventListener("click", () => { $("modal").hidden = true; modalYes = null; });
 
-    let ownerMultiplier = readOwnerMultiplier();
+/* ---------- sound ---------- */
+function beep() {
+  try {
+    const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
+    ac = ac || new C(); if (ac.state === "suspended") ac.resume();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination); o.frequency.value = 520; g.gain.value = 0.07 * state.settings.volume;
+    o.start(); o.stop(ac.currentTime + 0.055);
+  } catch (e) {}
+}
+function playClick() {
+  if (!state.settings.sound) return;
+  if (customAudio) { try { const a = customAudio.cloneNode(); a.volume = state.settings.volume; a.play().catch(() => {}); } catch (e) {} }
+  else beep();
+}
+function setCustomSound(data) {
+  customData = data;
+  customAudio = data ? new Audio(data) : null;
+  $("soundNote").textContent = data ? "Using your custom MP3 click sound." : "Using the built-in blip. Custom sounds are MP3 only (max 1.5 MB). Since this is an HTML game, it might not work in every browser or embed.";
+}
 
-    function fmt(value) {
-      if (value >= 1e12) return (value / 1e12).toFixed(2) + 'T';
-      if (value >= 1e9) return (value / 1e9).toFixed(2) + 'B';
-      if (value >= 1e6) return (value / 1e6).toFixed(2) + 'M';
-      if (value >= 1e3) return (value / 1e3).toFixed(2) + 'K';
-      return value >= 10 ? value.toFixed(0) : value.toFixed(2);
-    }
+/* ---------- saving ---------- */
+let lastSaveAt = 0, saveFailed = false, conflict = false;
+function updateStatus() {
+  const e = $("saveStatus");
+  let t, bad = false;
+  if (conflict) { t = "⚠ autosave paused (another tab)"; bad = true; }
+  else if (saveFailed) { t = "⚠ save failed"; bad = true; }
+  else if (!lastSaveAt) t = "autosave ready";
+  else {
+    const s = Math.floor((Date.now() - lastSaveAt) / 1000);
+    t = (store.mode === "local" ? "saved " : "temp-saved ") + (s < 5 ? "just now" : s < 60 ? s + "s ago" : Math.floor(s / 60) + "m ago");
+  }
+  e.textContent = t; e.classList.toggle("bad", bad);
+}
+function sane() {
+  return [state.energy, state.lifetime, state.rp, state.ap, state.rebirths, state.ascensions].every(x => Number.isFinite(x) && x >= 0);
+}
+function envT(raw) { try { const o = JSON.parse(raw); return (o && Number(o.t)) || 0; } catch (e) { return 0; } }
+function validEnv(raw) {
+  try {
+    const o = JSON.parse(raw);
+    if (!o || !sanitize(o.d)) return false;
+    if (o.schema === SAVE_SCHEMA) return typeof o.checksum === "string" && o.checksum === hash(JSON.stringify(o.d));
+    return o.v === 3 || o.schema === 3;
+  } catch (e) { return false; }
+}
+function rotateBackups(now) {
+  const cur = store.get(KEY);
+  if (!cur || !validEnv(cur)) return; // never back up garbage
+  const b1 = store.get(BAK1);
+  if (!b1 || now - envT(b1) > 120000) {
+    const b2 = store.get(BAK2);
+    if (b1 && validEnv(b1) && (!b2 || now - envT(b2) > 900000)) store.set(BAK2, b1);
+    store.set(BAK1, cur);
+  }
+}
+function save() {
+  if (conflict) return false;
+  if (!sane()) { saveFailed = true; updateStatus(); return false; }
+  try {
+    const now = Date.now(); state.last = now;
+    const data = JSON.stringify(state);
+    const json = JSON.stringify({schema:SAVE_SCHEMA, v:4, ver:VERSION, t:now, sid:SID, checksum:hash(data), d:state});
+    rotateBackups(now);
+    const ok = store.set(KEY, json) && store.get(KEY) === json;
+    saveFailed = !ok; if (ok) lastSaveAt = now;
+  } catch (e) { saveFailed = true; }
+  updateStatus();
+  return !saveFailed;
+}
+function sanitize(d) {
+  if (!d || typeof d !== "object") return null;
+  const s = fresh();
+  const num = (x, def, min) => { x = Number(x); return Number.isFinite(x) ? Math.max(min === undefined ? 0 : min, x) : def; };
+  const int = (x, def, max) => Math.min(max === undefined ? Infinity : max, Math.floor(num(x, def)));
+  s.energy = num(d.energy, 0); s.lifetime = num(d.lifetime, 0); s.clicks = int(d.clicks, 0);
+  for (const u of upgrades) s.owned[u.id] = int(d.owned && d.owned[u.id], 0, UPGRADE_CAP);
+  s.rebirths = int(d.rebirths, 0); s.totalRebirths = int(d.totalRebirths, 0); s.rp = int(d.rp, 0);
+  for (const it of rItems) if (it.store) s.rshop[it.id] = int(d.rshop && d.rshop[it.id], 0, it.max);
+  s.ascensions = int(d.ascensions, 0); s.ap = int(d.ap, 0);
+  for (const it of aItems) if (it.store) s.ashop[it.id] = int(d.ashop && d.ashop[it.id], 0, it.max);
+  const un = d.unlocks || {};
+  s.unlocks.autoUpgrade = !!un.autoUpgrade; s.unlocks.autoRebirth = !!un.autoRebirth; s.unlocks.autoClaim = !!un.autoClaim;
+  const st = d.settings || {};
+  const legacyUp = !!st.autoUpgrade;
+  s.settings.autoUpgradeClick = st.autoUpgradeClick === undefined ? legacyUp : !!st.autoUpgradeClick;
+  s.settings.autoUpgradeGen = st.autoUpgradeGen === undefined ? legacyUp : !!st.autoUpgradeGen;
+  s.settings.autoRebirth = !!st.autoRebirth; s.settings.autoClaim = !!st.autoClaim; s.settings.sound = !!st.sound;
+  s.settings.volume = Math.min(1, num(st.volume, 0.5));
+  s.achieved = Array.isArray(d.achieved) ? d.achieved.filter(x => ACH.some(a => a.id === x)) : [];
+  s.codes = Array.isArray(d.codes) ? d.codes.filter(x => CODES.some(c => c.code === x)) : [];
+  const ch = d.challenge || {};
+  s.challenge.active = CHALLENGES.some(c => c.id === ch.active) ? ch.active : null;
+  s.challenge.done = Array.isArray(ch.done) ? ch.done.filter(x => CHALLENGES.some(c => c.id === x)) : [];
+  const bo = d.boost || {};
+  s.boost = {mult: Math.min(2.5, num(bo.mult, 1, 1)), until: num(bo.until, 0)};
+  s.stats = {playtime: num(d.stats && d.stats.playtime, 0)};
+  s.last = num(d.last, Date.now());
+  return s;
+}
+function load() {
+  let found = null, from = "", migrated = false;
+  const keys = [KEY, BAK1, BAK2, ...LEGACY_SAVE_KEYS];
+  for (const k of keys) {
+    const raw = store.get(k); if (!raw) continue;
+    try {
+      const o = JSON.parse(raw);
+      if (!validEnv(raw)) continue;
+      const s = sanitize(o && o.d);
+      if (s) { found = s; from = k; migrated = LEGACY_SAVE_KEYS.includes(k); break; }
+    } catch (e) {}
+  }
+  if (store.mode === "local") {
+    const snd = store.get(SKEY) || store.get(LEGACY_SOUND_KEY);
+    if (snd) setCustomSound(snd);
+  }
+  if (!found) return;
+  state = found;
+  if (!boostActive()) state.boost = {mult:1, until:0};
+  const elapsed = Math.min(43200, Math.max(0, (Date.now() - state.last) / 1000));
+  const earned = rate(true) * elapsed;
+  if (earned > 0) { state.energy += earned; state.lifetime += earned; toast("Welcome back! +" + fmt(earned) + " offline energy."); }
+  if (migrated) {
+    toast("V4 save system upgraded. Your existing progress was preserved.");
+  } else if (from !== KEY) {
+    toast("Main save was damaged. Restored from backup.");
+  }
+}
 
-    function saveState() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, lastTick: Date.now() }));
-      } catch (error) {
-        $('saveStatus').textContent = 'autosave unavailable';
-      }
-    }
+/* ---- export / import ---- */
+function hash(str) { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(16).padStart(8, "0"); }
+function makeCode() {
+  state.last = Date.now();
+  const data = JSON.stringify(state);
+  const json = JSON.stringify({schema:SAVE_SCHEMA, v:4, ver:VERSION, t:Date.now(), checksum:hash(data), d:state});
+  return "EL4:" + hash(json) + ":" + btoa(json);
+}
+function parseCode(text) {
+  const t = String(text || "").replace(/\s+/g, "");
+  if (!t) return {error:"Nothing to import. Paste a save code first."};
+  const m = /^(EL4|EL3):([0-9a-f]{8}):([A-Za-z0-9+/=]+)$/.exec(t);
+  if (!m) return {error:"That isn't a supported Energy Lab save code."};
+  let json; try { json = atob(m[3]); } catch (e) { return {error:"That save code is damaged."}; }
+  if (hash(json) !== m[2]) return {error:"That save code is damaged or was cut off when copying."};
+  let o; try { o = JSON.parse(json); } catch (e) { return {error:"That save code is damaged."}; }
+  if (m[1] === "EL4" && (o.schema !== SAVE_SCHEMA || o.checksum !== hash(JSON.stringify(o.d)))) return {error:"That V4 save failed its integrity check."};
+  const s = sanitize(o && o.d);
+  return s ? {state:s} : {error:"That save code has no usable data."};
+}
+function applyImport(text) {
+  const r = parseCode(text);
+  if (r.error) return toast(r.error);
+  confirmBox("Import this save? It will replace your current progress.", () => {
+    state = r.state; state.last = Date.now();
+    if (!boostActive()) state.boost = {mult:1, until:0};
+    conflict = false;
+    renderAch(); renderCodes(); $("volume").value = Math.round(state.settings.volume * 100);
+    ui(); save(); toast("Save imported.");
+  });
+}
+function copyText(text) {
+  const done = () => toast("Save code copied.");
+  const fallback = () => {
+    const ta = $("saveText"); ta.value = text; ta.focus(); ta.select();
+    let ok = false; try { ok = document.execCommand("copy"); } catch (e) {}
+    toast(ok ? "Save code copied." : "Select the code in the box and copy it manually.");
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+  else fallback();
+}
+function exportFile() {
+  const code = makeCode();
+  $("saveText").value = code;
+  try {
+    const url = URL.createObjectURL(new Blob([code], {type:"text/plain"}));
+    const a = document.createElement("a");
+    const d = new Date(), p = n => String(n).padStart(2, "0");
+    a.href = url; a.download = "energy-lab-save-" + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + ".txt";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    toast("Save file exported. If nothing downloaded, copy the code from the box.");
+  } catch (e) { toast("Downloads are blocked here. Copy the code from the box instead."); }
+}
 
-    function boostActive() {
-      return Date.now() < state.boostUntil;
-    }
+/* ---------- actions ---------- */
+function floatText(txt) {
+  const w = $("orbwrap"); if (w.childElementCount > 12) return;
+  const p = el("div", "pop"); p.textContent = "+" + txt; p.style.marginLeft = Math.round(rand(-60, 60)) + "px";
+  w.append(p); setTimeout(() => p.remove(), 760);
+}
+function clickCore() {
+  const g = clickPower();
+  state.energy += g; state.lifetime += g; state.clicks++;
+  clickTimes.push(Date.now());
+  $("clickLine").textContent = "+" + fmt(g) + " energy";
+  floatText(fmt(g)); playClick();
+  checkAch(); ui();
+}
+function buyUp(u) {
+  if (!canBuyType(u)) return false;
+  const p = buyPlan(u);
+  if (p.n <= 0 || !p.afford) return false;
+  state.energy -= p.total; state.owned[u.id] += p.n;
+  return true;
+}
+function sellUp(u) {
+  const n = sellAmount(u); if (n <= 0) return;
+  state.energy += sellValue(u, n); state.owned[u.id] -= n;
+  ui(); save();
+}
+function resetRun() {
+  state.energy = 0; state.owned = zero(upgrades.map(u => u.id));
+  state.rebirths = 0; state.rp = 0; state.rshop = zero(["overcharge","generator","discount","headstart"]);
+}
+function doRebirth(auto) {
+  if (!canRebirth()) return;
+  const gain = rpGain();
+  state.rebirths++; state.totalRebirths++; state.rp += gain;
+  state.energy = 0; state.owned = zero(upgrades.map(u => u.id));
+  const hs = rLvl("headstart"); state.energy = hs * hs * 1000;
+  checkAch(); ui();
+  if (!auto) { save(); toast("Reborn! +" + gain + " Rebirth Points."); }
+}
+function doAscend() {
+  if (!canAscend()) return;
+  const gain = apGain();
+  state.ascensions++; state.ap += gain; resetRun();
+  checkAch(); ui(); save(); toast("Ascended! +" + gain + " Ascension Points.");
+}
 
-    function permanentClickPower() {
-      return Math.min(MAX_CLICK_MULTIPLIER, 1 + state.clickLevel * 1.55);
-    }
+/* shop (rebirth + ascension) */
+function getLvl(it) { return it.unlock ? (state.unlocks[it.unlock] ? 1 : 0) : (state[it.store][it.id] || 0); }
+const shopCostAt = (it, level) => Math.ceil(it.base * Math.pow(it.growth || 1, level));
+function shopBuyPlan(it) {
+  const l = getLvl(it), room = it.max - l;
+  if (room <= 0) return {n:0, total:0, afford:false, maxed:true};
+  const single = it.max === 1, maxMode = bulk.buy.mode === "max" && !single;
+  const want = single ? 1 : Math.min(room, wantAmount(bulk.buy, room, "max"));
+  if (want <= 0) return {n:0, total:0, afford:false};
+  const avail = state[it.cur]; let total = 0, n = 0;
+  for (let i = 0; i < want; i++) {
+    const c = shopCostAt(it, l + i);
+    if (maxMode && total + c > avail) break;
+    total += c; n++;
+  }
+  if (n === 0) return {n:1, total:shopCostAt(it, l), afford:false};
+  return {n, total, afford: total <= avail};
+}
+function shopSellPlan(it) {
+  const l = getLvl(it); if (l <= 0) return {n:0, value:0};
+  let want = Math.max(0, Math.min(l, wantAmount(bulk.sell, l, "all")));
+  if (it.max === 1) want = Math.min(1, want);
+  let value = 0; for (let i = l - want; i < l; i++) value += Math.round(shopCostAt(it, i) * SELL_RETURN);
+  return {n:want, value};
+}
+function buyShop(it) {
+  const p = shopBuyPlan(it); if (p.maxed || p.n <= 0 || !p.afford) return;
+  state[it.cur] -= p.total;
+  if (it.unlock) state.unlocks[it.unlock] = true; else state[it.store][it.id] += p.n;
+  ui(); save();
+}
+function sellShop(it) {
+  const p = shopSellPlan(it); if (p.n <= 0) return;
+  state[it.cur] += p.value;
+  if (it.unlock) state.unlocks[it.unlock] = false; else state[it.store][it.id] -= p.n;
+  ui(); save();
+}
 
-    function clickPower() {
-      return permanentClickPower() * (boostActive() ? 2 : 1) * ownerMultiplier;
-    }
+function startChallenge(c) {
+  confirmBox('Start "' + c.name + '"? This resets energy, upgrades, rebirths and the rebirth shop. Ascension bonuses stay.', () => {
+    resetRun(); state.challenge.active = c.id; ui(); save(); toast("Challenge started: " + c.name);
+  });
+}
+function completeChallenge(c) {
+  if (state.challenge.active !== c.id || state.rebirths < ascendReq()) return;
+  if (!state.challenge.done.includes(c.id)) state.challenge.done.push(c.id);
+  state.challenge.active = null; resetRun(); checkAch(); ui(); save(); toast("Challenge complete: " + c.name + "!");
+}
+function abandonChallenge() {
+  confirmBox("Abandon the challenge? Your run resets and no reward is given.", () => {
+    state.challenge.active = null; resetRun(); ui(); save();
+  });
+}
+function startBoost(mult, secs, quiet) {
+  const until = Date.now() + secs * 1000;
+  if (boostActive() && state.boost.mult > mult) return false;
+  if (boostActive() && state.boost.mult === mult) state.boost.until = Math.max(state.boost.until, until);
+  else state.boost = {mult, until};
+  if (!quiet) toast("Energy boost x" + mult + " for " + secs + "s!");
+  return true;
+}
+function redeem(raw, auto) {
+  const code = String(raw || "").trim().toUpperCase();
+  if (!code) return toast("Enter a code first.");
+  const c = CODES.find(x => x.code === code);
+  if (!c) return toast("Unknown code.");
+  if (state.codes.includes(code)) { if (!auto) toast("You've already used that code."); return; }
+  const lead = auto ? "Auto-claimed " + code + ": " : "Code accepted: ";
+  if (c.type === "boost") {
+    if (boostActive() && state.boost.mult > c.mult) { if (!auto) toast("A stronger boost is already running. Try this code again later."); return; }
+    startBoost(c.mult, c.secs, true);
+    toast(lead + "x" + c.mult + " boost for " + c.secs + "s.");
+  } else if (c.type === "energy") {
+    const g = Math.max(c.min, rate() * c.secs); state.energy += g; state.lifetime += g; toast(lead + "+" + fmt(g) + " energy.");
+  } else if (c.type === "rp") { state.rp += c.amt; toast(lead + "+" + c.amt + " Rebirth Points."); }
+  else if (c.type === "ap") { state.ap += c.amt; toast(lead + "+" + c.amt + " Ascension Points."); }
+  state.codes.push(code);
+  renderCodes(); checkAch(); ui(); save();
+}
+function checkAch() {
+  let changed = false;
+  for (const a of ACH) if (!state.achieved.includes(a.id) && a.test(state)) { state.achieved.push(a.id); toast("Milestone unlocked: " + a.name); changed = true; }
+  if (changed) renderAch();
+}
 
-    function autoPower() {
-      return state.autoLevel * (boostActive() ? 2 : 1) * ownerMultiplier;
-    }
+/* ---------- build ui ---------- */
+function makeBar(kind) {
+  const bar = el("div", "bulkbar " + kind);
+  const lab = el("span", "muted"); lab.textContent = kind === "buy" ? "Buy:" : "Sell (-10%):"; bar.append(lab);
+  const modes = kind === "buy" ? ["1","5","10","max","custom"] : ["1","5","10","all","custom"];
+  const names = {max:"Max", all:"All", custom:"Custom"};
+  for (const m of modes) {
+    const b = el("button"); b.dataset.kind = kind; b.dataset.mode = m; b.textContent = names[m] || m;
+    b.addEventListener("click", () => { bulk[kind].mode = m; ui(); });
+    bar.append(b);
+  }
+  const inp = el("input"); inp.type = "number"; inp.min = "1"; inp.step = "1"; inp.value = bulk[kind].custom; inp.dataset.kind = kind;
+  inp.setAttribute("aria-label", "Custom " + kind + " amount");
+  inp.addEventListener("input", () => {
+    bulk[kind].custom = inp.value; bulk[kind].mode = "custom";
+    document.querySelectorAll('.bulkbar input[data-kind="' + kind + '"]').forEach(x => { if (x !== inp) x.value = inp.value; });
+    ui();
+  });
+  bar.append(inp);
+  return bar;
+}
+document.querySelectorAll(".bulk-holder").forEach(h => h.append(makeBar("buy"), makeBar("sell")));
 
-    function clickUpgradeCost() {
-      return Math.floor(15 * Math.pow(1.7, state.clickLevel));
-    }
-
-    function autoUpgradeCost() {
-      return Math.floor(30 * Math.pow(1.75, state.autoLevel));
-    }
-
-    function showToast(msg) {
-      const toast = $('toast');
-      toast.textContent = msg;
-      toast.classList.add('show');
-      clearTimeout(showToast.timer);
-      showToast.timer = setTimeout(() => toast.classList.remove('show'), 1800);
-    }
-
-    function buildUpgradeList() {
-      const upgrades = $('upgrades');
-      const items = [
-        { id: 'click', title: 'Stronger click', desc: 'Increase the energy gained from each tap.', cost: () => clickUpgradeCost(), readable: 'level ' + state.clickLevel, effect: '+' + fmt(permanentClickPower()) },
-        { id: 'auto', title: 'Auto collector', desc: 'Generate passive energy every second.', cost: () => autoUpgradeCost(), readable: 'level ' + state.autoLevel, effect: '+' + fmt(autoPower()) },
-        { id: 'boost', title: 'Boost', desc: 'Double production for 10 seconds.', cost: () => 50, readable: 'instant', effect: 'x2' }
-      ];
-      upgrades.innerHTML = items.map(item => {
-        const cost = item.cost();
-        const disabled = item.id === 'click' ? state.energy < cost || permanentClickPower() >= MAX_CLICK_MULTIPLIER : state.energy < cost;
-        const locked = item.id === 'click' && permanentClickPower() >= MAX_CLICK_MULTIPLIER;
-        return `
-          <div class="upgrade ${locked ? 'locked' : ''}">
-            <div>
-              <h3>${item.title}</h3>
-              <p>${item.desc}</p>
-            </div>
-            <div class="acts">
-              <button class="buy ${disabled ? 'disabled' : ''}" data-buy="${item.id}" ${disabled ? 'disabled' : ''}><b>${locked ? 'MAX' : 'BUY'}</b><small>${fmt(cost)}</small></button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function updateUI() {
-      const power = clickPower();
-      const rateValue = autoPower();
-      const boostText = boostActive() ? 'Boost active • ' + Math.max(0, Math.ceil((state.boostUntil - Date.now()) / 1000)) + 's left' : 'Boost inactive';
-
-      $('energy').textContent = fmt(state.energy);
-      $('rate').textContent = fmt(rateValue);
-      $('power').textContent = fmt(power);
-      $('cps').textContent = fmt(rateValue);
-      $('clickLine').textContent = boostText + ' • click power ' + fmt(power);
-      $('coreInfo').textContent = 'You are producing ' + fmt(rateValue) + ' energy per second and ' + fmt(power) + ' per click.';
-      $('rebBar').style.width = Math.min(100, (Math.min(1, state.energy / 1000)) * 100) + '%';
-      $('rebBarTxt').textContent = state.energy >= 1000 ? 'Rebirth ready' : 'Need ' + fmt(1000 - state.energy) + ' more energy for rebirth';
-      $('ownedCount').textContent = (state.clickLevel + state.autoLevel) + ' owned';
-      $('achCount').textContent = state.totalClicks > 0 ? '1 / 1' : '0 / 1';
-      $('lifeStat').textContent = fmt(state.lifetime);
-      $('clickStat').textContent = fmt(state.totalClicks);
-      $('rebirthStat').textContent = fmt(state.rebirths);
-      $('ascStat').textContent = fmt(state.ascensions);
-
-      $('saveStatus').textContent = isOwner ? 'owner access ready' : 'autosave ready';
-      if (isOwner) {
-        const slider = $('ownerMultiplier');
-        slider.value = ownerMultiplier;
-        $('ownerMultiplierValue').textContent = ownerMultiplier.toFixed(1) + 'x';
-        $('ownerStatus').textContent = 'Multiplier is ' + ownerMultiplier.toFixed(1) + 'x.';
-        $('playerIdDisplay').textContent = playerId;
-      }
-
-      document.querySelectorAll('[data-buy]').forEach(button => {
-        const id = button.dataset.buy;
-        if (id === 'click') {
-          const cost = clickUpgradeCost();
-          button.disabled = state.energy < cost || permanentClickPower() >= MAX_CLICK_MULTIPLIER;
-          button.innerHTML = `<b>${permanentClickPower() >= MAX_CLICK_MULTIPLIER ? 'MAX' : 'BUY'}</b><small>${fmt(cost)}</small>`;
-        }
-        if (id === 'auto') {
-          const cost = autoUpgradeCost();
-          button.disabled = state.energy < cost;
-          button.innerHTML = `<b>BUY</b><small>${fmt(cost)}</small>`;
-        }
-        if (id === 'boost') {
-          button.disabled = state.energy < 50;
-          button.innerHTML = `<b>BUY</b><small>50</small>`;
-        }
-      });
-
-      buildUpgradeList();
-    }
-
-    function collectEnergy() {
-      const gained = clickPower();
-      state.energy += gained;
-      state.totalClicks += 1;
-      state.lifetime += gained;
-      const orb = $('orb');
-      const pop = document.createElement('div');
-      pop.className = 'pop';
-      pop.textContent = '+' + fmt(gained);
-      orb.parentElement.appendChild(pop);
-      setTimeout(() => pop.remove(), 650);
-      updateUI();
-      saveState();
-    }
-
-    function buyClickUpgrade() {
-      const cost = clickUpgradeCost();
-      if (state.energy < cost || permanentClickPower() >= MAX_CLICK_MULTIPLIER) return;
-      state.energy -= cost;
-      state.clickLevel += 1;
-      updateUI();
-      saveState();
-    }
-
-    function buyAutoUpgrade() {
-      const cost = autoUpgradeCost();
-      if (state.energy < cost) return;
-      state.energy -= cost;
-      state.autoLevel += 1;
-      updateUI();
-      saveState();
-    }
-
-    function buyBoost() {
-      if (state.energy < 50) return;
-      state.energy -= 50;
-      state.boostUntil = Date.now() + 10000;
-      showToast('Boost activated');
-      updateUI();
-      saveState();
-    }
-
-    function tick() {
-      const now = Date.now();
-      const elapsed = Math.max(0, Math.min(1, (now - state.lastTick) / 1000));
-      state.lastTick = now;
-      if (state.autoLevel > 0) {
-        const generated = autoPower() * elapsed;
-        state.energy += generated;
-        state.lifetime += generated;
-      }
-      updateUI();
-      saveState();
-    }
-
-    function resetGame() {
-      if (!window.confirm('Reset all progress?')) return;
-      state = { ...defaultState, lastTick: Date.now() };
-      updateUI();
-      saveState();
-    }
-
-    $('orb').addEventListener('click', collectEnergy);
-    $('resetBtn').addEventListener('click', resetGame);
-    document.addEventListener('click', (event) => {
-      const button = event.target.closest('[data-buy]');
-      if (!button) return;
-      const id = button.dataset.buy;
-      if (id === 'click') buyClickUpgrade();
-      if (id === 'auto') buyAutoUpgrade();
-      if (id === 'boost') buyBoost();
+const upRefs = upgrades.map(u => ({u}));
+(function buildUpgrades() {
+  const root = $("upgrades");
+  const groups = [["Click upgrades","click"],["Generators","rate"]];
+  for (const [label, kind] of groups) {
+    const h = el("h3"); h.className = "group"; h.textContent = label; root.append(h);
+    upgrades.filter(u => u.kind === kind).forEach(u => {
+      const r = upRefs.find(x => x.u === u);
+      r.row = el("div", "upgrade");
+      const info = el("div"); r.h = el("h3"); r.p = el("p"); r.p.textContent = u.desc; info.append(r.h, r.p);
+      const acts = el("div", "acts");
+      r.buy = el("button", "buy"); r.buy.innerHTML = "<b></b><small></small>"; r.buyB = r.buy.firstChild; r.buyS = r.buy.lastChild;
+      r.sell = el("button", "buy"); r.sell.innerHTML = "<b></b><small></small>"; r.sellB = r.sell.firstChild; r.sellS = r.sell.lastChild;
+      r.buy.addEventListener("click", () => { if (buyUp(u)) { playClick(); checkAch(); ui(); save(); } });
+      r.sell.addEventListener("click", () => sellUp(u));
+      r.buy.setAttribute("aria-label", "Buy " + u.name); r.sell.setAttribute("aria-label", "Sell " + u.name);
+      acts.append(r.buy, r.sell); r.row.append(info, acts); root.append(r.row);
     });
+  }
+})();
+function buildShop(rootId, items) {
+  const root = $(rootId);
+  return items.map(it => {
+    const row = el("div", "upgrade"), info = el("div"), h = el("h3"), p = el("p");
+    info.append(h, p);
+    const acts = el("div", "acts");
+    const b = el("button", "buy"); b.innerHTML = "<b></b><small></small>";
+    const s = el("button", "buy"); s.innerHTML = "<b></b><small></small>";
+    b.addEventListener("click", () => buyShop(it));
+    s.addEventListener("click", () => sellShop(it));
+    b.setAttribute("aria-label", "Buy " + it.name); s.setAttribute("aria-label", "Sell " + it.name);
+    acts.append(b, s); row.append(info, acts); root.append(row);
+    return {it, h, p, b, bb: b.firstChild, bs: b.lastChild, s, sb: s.firstChild, ss: s.lastChild};
+  });
+}
+const rRefs = buildShop("rebShop", rItems), aRefs = buildShop("ascShop", aItems);
+function updateShop(refs) {
+  for (const r of refs) {
+    const it = r.it, l = getLvl(it), bp = shopBuyPlan(it), sp = shopSellPlan(it);
+    r.h.textContent = it.name + (it.max === 1 ? (l ? " · Owned" : "") : " · Lv " + l + "/" + it.max);
+    r.p.textContent = it.desc(l);
+    r.bb.textContent = bp.maxed ? "MAX" : fmt(bp.total) + " " + it.cur.toUpperCase();
+    r.bs.textContent = bp.maxed ? "" : "BUY " + bp.n;
+    r.b.disabled = !!bp.maxed || !bp.afford;
+    r.sb.textContent = sp.n > 0 ? "+" + fmt(sp.value) + " " + it.cur.toUpperCase() : "-";
+    r.ss.textContent = "SELL " + sp.n;
+    r.s.disabled = sp.n <= 0;
+  }
+}
+const chRefs = CHALLENGES.map(c => {
+  const card = el("div", "upgrade"), info = el("div");
+  const h = el("h3"), d = el("p"), rw = el("p"), st = el("p"), bar = el("div", "bar"), fill = el("span");
+  h.textContent = c.name; d.textContent = c.desc; rw.textContent = "Reward: " + c.rewardText; bar.append(fill);
+  info.append(h, d, rw, st, bar);
+  const acts = el("div", "acts");
+  const start = el("button", "primary"); start.textContent = "Start";
+  const complete = el("button", "primary"); complete.textContent = "Complete";
+  const abandon = el("button", "danger"); abandon.textContent = "Abandon";
+  start.addEventListener("click", () => startChallenge(c));
+  complete.addEventListener("click", () => completeChallenge(c));
+  abandon.addEventListener("click", abandonChallenge);
+  acts.append(start, complete, abandon); card.append(info, acts); $("chList").append(card);
+  return {c, st, fill, start, complete, abandon};
+});
+const statRefs = STATS.map(([label, fn]) => {
+  const row = el("div", "statrow"), a = el("span"), b = el("span"); a.textContent = label; row.append(a, b); $("statList").append(row);
+  return {fn, b};
+});
+$("playerIdValue").textContent = PLAYER_ID;
+$("ownerBadge").hidden = !IS_OWNER;
+$("ownerPanel").hidden = !IS_OWNER;
+$("ownerMultiplierRange").value = ownerMultiplier;
+$("ownerMultiplierValue").textContent = ownerMultiplier.toFixed(1) + "x";
+$("ownerStatus").textContent = "Production multiplier is currently " + ownerMultiplier.toFixed(1) + "x.";
+const navBtns = {}; document.querySelectorAll("#nav button").forEach(b => { navBtns[b.dataset.tab] = b; });
 
-    document.querySelectorAll('.js-rebirth').forEach(button => button.addEventListener('click', () => {
-      state.rebirths += 1;
-      state.energy = 0;
-      state.clickLevel = 0;
-      state.autoLevel = 0;
-      state.boostUntil = 0;
-      showToast('Rebirth complete');
-      updateUI();
-      saveState();
-    }));
+function renderAch() {
+  const root = $("achievements"); root.innerHTML = "";
+  for (const a of ACH) { const d = el("div", "ms" + (state.achieved.includes(a.id) ? " done" : "")); d.textContent = (state.achieved.includes(a.id) ? "✓ " : "○ ") + a.name; root.append(d); }
+  $("achCount").textContent = state.achieved.length + " / " + ACH.length;
+}
+function renderCodes() {
+  const root = $("codeList"); root.innerHTML = "";
+  for (const code of state.codes) {
+    const c = CODES.find(x => x.code === code); if (!c) continue;
+    const d = el("div", "codeitem");
+    const reward = c.type === "energy" ? "energy" : c.type === "boost" ? "x" + c.mult + " boost" : c.type === "rp" ? "+" + c.amt + " RP" : "+" + c.amt + " AP";
+    const a = el("span"), b = el("span", "muted"); a.textContent = c.code; b.textContent = reward; d.append(a, b); root.append(d);
+  }
+  $("codeCount").textContent = state.codes.length + " / " + CODES.length + " used";
+}
 
-    document.querySelectorAll('.js-ascend').forEach(button => button.addEventListener('click', () => {
-      state.ascensions += 1;
-      state.rebirths = 0;
-      state.energy = 0;
-      state.clickLevel = 0;
-      state.autoLevel = 0;
-      state.boostUntil = 0;
-      showToast('Ascension complete');
-      updateUI();
-      saveState();
-    }));
+/* ---------- ui update ---------- */
+function cpsNow() { const t = Date.now() - 1000; clickTimes = clickTimes.filter(x => x > t); return clickTimes.length; }
+function ui() {
+  const now = Date.now();
+  $("energy").textContent = fmt(state.energy);
+  $("rate").textContent = fmt(rate());
+  $("power").textContent = fmt(clickPower());
+  $("cps").textContent = cpsNow();
+  $("mults").textContent = "Rebirth x" + rebirthMult().toFixed(2) + " · Ascension x" + ascMult().toFixed(2) + " · Challenges x" + (chalMult("click") === chalMult("rate") ? chalMult("click").toFixed(2) : chalMult("click").toFixed(2) + "/" + chalMult("rate").toFixed(2)) + (chal() ? " · IN CHALLENGE: " + CHALLENGES.find(c => c.id === chal()).name : "");
+  const b = $("boost");
+  if (boostActive()) { b.hidden = false; b.textContent = "⚡ ENERGY BOOST x" + state.boost.mult + " · " + Math.ceil((state.boost.until - now) / 1000) + "s"; } else b.hidden = true;
 
-    const navButtons = document.querySelectorAll('.nav button');
-    navButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const target = button.dataset.tab;
-        navButtons.forEach(el => el.classList.toggle('on', el === button));
-        document.querySelectorAll('section[id^="tab-"]').forEach(section => {
-          section.hidden = section.id !== 'tab-' + target;
-        });
-      });
-    });
+  let owned = 0;
+  for (const r of upRefs) {
+    const u = r.u, o = state.owned[u.id], allowed = canBuyType(u), bp = buyPlan(u), n = sellAmount(u);
+    owned += o;
+    r.h.textContent = u.name + " · " + o + (bp.maxed ? " (max)" : "");
+    r.buyB.textContent = bp.maxed ? "MAX" : fmt(bp.total);
+    r.buyS.textContent = bp.maxed ? "" : "BUY " + bp.n;
+    r.buy.disabled = !allowed || !!bp.maxed || bp.n <= 0 || !bp.afford;
+    r.row.classList.toggle("locked", !allowed);
+    r.sellB.textContent = n > 0 ? "+" + fmt(sellValue(u, n)) : "-";
+    r.sellS.textContent = "SELL " + n;
+    r.sell.disabled = n <= 0;
+  }
+  $("ownedCount").textContent = owned + " owned";
+  document.querySelectorAll(".bulkbar button").forEach(btn => btn.classList.toggle("on", bulk[btn.dataset.kind].mode === btn.dataset.mode));
 
-    $('ownerMultiplier').addEventListener('input', () => {
-      ownerMultiplier = Math.max(1, Math.min(100, Number($('ownerMultiplier').value)));
-      try {
-        localStorage.setItem(OWNER_SETTINGS_KEY, String(ownerMultiplier));
-      } catch (error) {}
-      updateUI();
-      saveState();
-    });
+  const rq = rebirthReq();
+  document.querySelectorAll(".js-rebirth").forEach(btn => { btn.disabled = !canRebirth(); btn.textContent = "Rebirth · " + fmt(rq) + " · +" + rpGain() + " RP"; });
+  document.querySelectorAll(".js-ascend").forEach(btn => {
+    btn.disabled = !canAscend();
+    btn.textContent = chal() ? "Ascend (locked in challenge)" : "Ascend · " + state.rebirths + "/" + ascendReq() + " rebirths" + (canAscend() ? " · +" + apGain() + " AP" : "");
+  });
+  const pct = Math.min(100, state.energy / rq * 100);
+  $("rebBar").style.width = pct + "%";
+  $("rebBarTxt").textContent = canRebirth() ? "Rebirth is ready!" : "Next rebirth: " + (pct < 10 ? pct.toFixed(1) : Math.floor(pct)) + "% · " + fmt(state.energy) + " / " + fmt(rq);
+  $("coreInfo").textContent = "Rebirths: " + state.rebirths + " · RP: " + state.rp + " · Ascensions: " + state.ascensions + " · AP: " + state.ap;
+  $("rpCount").textContent = state.rp + " RP";
+  $("rebInfo").textContent = "Rebirths this ascension: " + state.rebirths + " (x" + rebirthMult().toFixed(2) + "). Next rebirth needs " + fmt(rq) + " energy and gives +" + rpGain() + " RP.";
+  $("rebLock").hidden = state.totalRebirths > 0; $("rebShopWrap").hidden = state.totalRebirths < 1;
+  $("apCount").textContent = state.ap + " AP";
+  const tier = currentAscensionTier();
+  const nextTier = ASCENSION_TIERS.find(t => t.required > state.ascensions);
+  const totalAscMult = (1 + 0.5 * state.ascensions) * tier.multiplier;
+  $("ascInfo").textContent = "Ascensions: " + state.ascensions + " (x" + totalAscMult.toFixed(2) + " total ascension multiplier). You need " + ascendReq() + " rebirths to ascend (you have " + state.rebirths + "). Ascending now would give +" + apGain() + " AP.";
+  $("tierInfo").textContent = nextTier
+    ? "Current tier: " + tier.name + " (Tier " + (tier.id === 1 ? "I" : "II") + "). Next: " + nextTier.name + " at " + nextTier.required + " total ascensions · " + state.ascensions + "/" + nextTier.required + " complete. Unlock reward: x" + nextTier.multiplier.toFixed(2) + " tier production multiplier."
+    : "Current tier: " + tier.name + " (Tier II) · Stellar bonus active: x" + tier.multiplier.toFixed(2) + " production.";
+  $("ascLock").hidden = state.ascensions > 0; $("ascShopWrap").hidden = state.ascensions < 1;
+  updateShop(rRefs); updateShop(aRefs);
 
-    if (isOwner) {
-      $('playerIdDisplay').textContent = playerId;
-      $('ownerMultiplier').value = ownerMultiplier;
-      $('ownerStatus').textContent = 'Multiplier is ' + ownerMultiplier.toFixed(1) + 'x.';
+  $("chLock").hidden = state.ascensions > 0; $("chList").hidden = state.ascensions < 1; $("chIntro").hidden = state.ascensions < 1;
+  $("chCount").textContent = state.challenge.done.length + " / " + CHALLENGES.length + " done";
+  for (const r of chRefs) {
+    const done = state.challenge.done.includes(r.c.id), active = chal() === r.c.id;
+    r.st.textContent = done ? "✓ Completed" : active ? "In progress · " + state.rebirths + "/" + ascendReq() + " rebirths" : "Not completed";
+    r.fill.style.width = active ? Math.min(100, state.rebirths / ascendReq() * 100) + "%" : done ? "100%" : "0%";
+    r.start.hidden = done || active || !!chal();
+    r.complete.hidden = !active; r.complete.disabled = state.rebirths < ascendReq();
+    r.abandon.hidden = !active;
+  }
+  for (const r of statRefs) r.b.textContent = r.fn(state);
+
+  navBtns.rebirth.classList.toggle("ping", canRebirth());
+  navBtns.ascension.classList.toggle("ping", canAscend());
+  navBtns.challenges.classList.toggle("ping", !!chal() && state.rebirths >= ascendReq());
+
+  const s = state.settings, un = state.unlocks;
+  $("autoUpC").disabled = !un.autoUpgrade; $("autoUpC").checked = un.autoUpgrade && s.autoUpgradeClick;
+  $("autoUpG").disabled = !un.autoUpgrade; $("autoUpG").checked = un.autoUpgrade && s.autoUpgradeGen;
+  $("autoUpCNote").textContent = $("autoUpGNote").textContent = un.autoUpgrade ? "" : "(locked · Rebirth Shop)";
+  $("autoRe").disabled = !un.autoRebirth; $("autoRe").checked = un.autoRebirth && s.autoRebirth;
+  $("autoReNote").textContent = un.autoRebirth ? "" : "(locked · Ascension Shop)";
+  $("autoCl").disabled = !un.autoClaim; $("autoCl").checked = un.autoClaim && s.autoClaim;
+  $("autoClNote").textContent = un.autoClaim ? "" : "(locked · Rebirth Shop)";
+  $("soundOn").checked = s.sound;
+}
+
+/* ---------- events ---------- */
+$("orb").addEventListener("click", clickCore);
+$("copyPlayerIdBtn").addEventListener("click", async () => {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(PLAYER_ID);
+      toast("Player ID copied.");
     } else {
-      $('tab-settings').hidden = true;
-      $('ownerMultiplier').disabled = true;
-      $('resetBtn').disabled = true;
-      $('playerIdDisplay').textContent = playerId;
+      const temp = document.createElement("textarea");
+      temp.value = PLAYER_ID; document.body.appendChild(temp); temp.select();
+      const ok = document.execCommand("copy"); temp.remove();
+      toast(ok ? "Player ID copied." : "Clipboard unavailable. Select the Player ID and copy it manually.");
     }
+  } catch (e) { toast("Clipboard unavailable. Select the Player ID and copy it manually."); }
+});
+$("ownerMultiplierRange").addEventListener("input", e => {
+  if (!IS_OWNER) return;
+  ownerMultiplier = Math.max(1, Math.min(5, Math.round(Number(e.target.value) * 2) / 2));
+  store.set(OWNER_SETTINGS_KEY, String(ownerMultiplier));
+  $("ownerMultiplierValue").textContent = ownerMultiplier.toFixed(1) + "x";
+  $("ownerStatus").textContent = "Production multiplier is currently " + ownerMultiplier.toFixed(1) + "x.";
+  ui();
+});
+$("ownerResetBtn").addEventListener("click", () => {
+  if (!IS_OWNER) return;
+  ownerMultiplier = 1;
+  store.set(OWNER_SETTINGS_KEY, "1");
+  $("ownerMultiplierRange").value = "1";
+  $("ownerMultiplierValue").textContent = "1.0x";
+  $("ownerStatus").textContent = "Production multiplier is currently 1.0x.";
+  ui();
+  toast("Owner settings reset.");
+});
+document.querySelectorAll(".js-rebirth").forEach(b => b.addEventListener("click", () => doRebirth(false)));
+document.querySelectorAll(".js-ascend").forEach(b => b.addEventListener("click", () => {
+  if (!canAscend()) return;
+  confirmBox("Ascend now? You gain " + apGain() + " Ascension Points and a permanent boost. Rebirths, Rebirth Points, the rebirth shop, energy and upgrades reset.", doAscend);
+}));
+document.querySelectorAll("#nav button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("#nav button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll("section[id^=tab-]").forEach(t => t.hidden = t.id !== "tab-" + b.dataset.tab);
+}));
+$("autoUpC").addEventListener("change", e => { state.settings.autoUpgradeClick = e.target.checked; save(); });
+$("autoUpG").addEventListener("change", e => { state.settings.autoUpgradeGen = e.target.checked; save(); });
+$("autoRe").addEventListener("change", e => { state.settings.autoRebirth = e.target.checked; save(); });
+$("autoCl").addEventListener("change", e => { state.settings.autoClaim = e.target.checked; save(); });
+$("soundOn").addEventListener("change", e => { state.settings.sound = e.target.checked; save(); });
+$("volume").addEventListener("input", e => { state.settings.volume = Number(e.target.value) / 100; });
+$("volume").addEventListener("change", save);
+$("mp3Btn").addEventListener("click", () => $("mp3File").click());
+$("mp3Test").addEventListener("click", () => { const was = state.settings.sound; state.settings.sound = true; playClick(); state.settings.sound = was; });
+$("mp3Clear").addEventListener("click", () => { setCustomSound(null); store.remove(SKEY); toast("Custom sound removed."); });
+$("mp3File").addEventListener("change", e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  if (!(f.type === "audio/mpeg" || /\.mp3$/i.test(f.name))) return toast("Please choose an MP3 file.");
+  if (f.size > 1.5 * 1024 * 1024) return toast("That MP3 is too big (max 1.5 MB).");
+  const r = new FileReader();
+  r.onload = () => {
+    setCustomSound(r.result);
+    const kept = store.mode === "local" && store.set(SKEY, r.result);
+    toast(kept ? "Custom click sound set." + (state.settings.sound ? "" : " Turn Click sound on to hear it.") : "Sound loaded for this session only.");
+  };
+  r.onerror = () => toast("Couldn't read that file.");
+  r.readAsDataURL(f);
+});
+$("redeemBtn").addEventListener("click", () => { redeem($("codeInput").value, false); $("codeInput").value = ""; });
+$("codeInput").addEventListener("keydown", e => { if (e.key === "Enter") $("redeemBtn").click(); });
+$("saveBtn").addEventListener("click", () => {
+  if (conflict) return confirmBox("Another tab has been saving this game. Saving here will overwrite its progress. Continue?", () => { conflict = false; save(); toast("Game saved."); });
+  toast(save() ? "Game saved." : "Couldn't save here. Use Export save file or Copy save code.");
+});
+$("exportBtn").addEventListener("click", exportFile);
+$("copyBtn").addEventListener("click", () => { const c = makeCode(); $("saveText").value = c; copyText(c); });
+$("importBtn").addEventListener("click", () => applyImport($("saveText").value));
+$("importFileBtn").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  if (f.size > 2 * 1024 * 1024) return toast("That file is too big to be a save.");
+  const r = new FileReader();
+  r.onload = () => { $("saveText").value = String(r.result).trim(); applyImport(r.result); };
+  r.onerror = () => toast("Couldn't read that file.");
+  r.readAsText(f);
+});
+$("resetBtn").addEventListener("click", () => confirmBox("Delete ALL your Energy Lab progress? This cannot be undone.", () => {
+  state = fresh(); store.remove(KEY); store.remove(BAK1); store.remove(BAK2);
+  for (const k of LEGACY_SAVE_KEYS) store.remove(k);
+  conflict = false;
+  // Player identity is stored separately and intentionally survives progress resets.
+  renderAch(); renderCodes(); ui(); save(); toast("Progress reset. Your Player ID was kept.");
+}));
+let chipUntil = 0;
+$("chipUse").addEventListener("click", () => { redeem($("chipCode").textContent, false); $("codeChip").hidden = true; chipUntil = 0; });
+$("chipX").addEventListener("click", () => { $("codeChip").hidden = true; chipUntil = 0; });
+window.addEventListener("storage", e => {
+  if (e.key !== KEY || !e.newValue) return;
+  try {
+    const o = JSON.parse(e.newValue);
+    if (o && o.sid && o.sid !== SID && !conflict) { conflict = true; updateStatus(); toast("Another tab is saving this game, so autosave is paused here. Reload to sync."); }
+  } catch (err) {}
+});
 
-    updateUI();
-    setInterval(tick, 200);
-  </script>
+/* ---------- init + loop ---------- */
+load();
+$("volume").value = Math.round(state.settings.volume * 100);
+$("storeMode").textContent = store.mode === "local" ? "Storage: browser" : store.mode === "session" ? "Storage: this tab only" : "Storage: unavailable (use Export)";
+$("storeWarn").hidden = store.mode === "local";
+renderAch(); renderCodes(); checkAch(); ui(); save();
+let lastT = Date.now(), lastAuto = 0, nextRoll = Date.now() + 60000, nextCode = Date.now() + rand(CODE_FIRST[0], CODE_FIRST[1]);
+function autoBuy() {
+  const kinds = [];
+  if (state.settings.autoUpgradeClick) kinds.push("click");
+  if (state.settings.autoUpgradeGen) kinds.push("rate");
+  if (!kinds.length) return;
+  for (let i = 0; i < 30; i++) {
+    let best = null, bp = Infinity;
+    for (const u of upgrades) {
+      if (!kinds.includes(u.kind) || !canBuyType(u) || state.owned[u.id] >= UPGRADE_CAP) continue;
+      const p = cost(u); if (p <= state.energy && p < bp) { best = u; bp = p; }
+    }
+    if (!best) break;
+    state.energy -= bp; state.owned[best.id]++;
+  }
+}
+setInterval(() => {
+  const now = Date.now(), raw = Math.max(0, (now - lastT) / 1000); lastT = now;
+  const dt = Math.min(43200, raw);
+  state.stats.playtime += Math.min(raw, 5);
+  if (raw > 30) {
+    const g = rate(true) * dt;
+    if (g > 0) { state.energy += g; state.lifetime += g; toast("Welcome back! +" + fmt(g) + " energy while you were away."); }
+  } else {
+    const g = rate() * dt;
+    if (g > 0) { state.energy += g; state.lifetime += g; }
+  }
+  if (state.unlocks.autoUpgrade && now - lastAuto >= 500) { lastAuto = now; autoBuy(); }
+  if (state.unlocks.autoRebirth && state.settings.autoRebirth && canRebirth()) doRebirth(true);
+  if (now >= nextRoll) {
+    nextRoll = now + 60000;
+    if (!boostActive()) for (let i = BOOST_TIERS.length - 1; i >= 0; i--) if (Math.random() < BOOST_TIERS[i].p) { startBoost(BOOST_TIERS[i].m, BOOST_SECS); break; }
+  }
+  if (now >= nextCode) {
+    nextCode = now + rand(CODE_NEXT[0], CODE_NEXT[1]);
+    const c = CODES[Math.floor(Math.random() * CODES.length)];
+    if (state.unlocks.autoClaim && state.settings.autoClaim) redeem(c.code, true);
+    else { $("chipCode").textContent = c.code; $("codeChip").hidden = false; chipUntil = now + 20000; }
+  }
+  if (chipUntil && now > chipUntil) { $("codeChip").hidden = true; chipUntil = 0; }
+  checkAch(); ui(); updateStatus();
+}, 250);
+setInterval(save, 10000);
+document.addEventListener("visibilitychange", () => { if (document.hidden) save(); });
+window.addEventListener("pagehide", save);
+window.addEventListener("beforeunload", save);
+})();
+</script>
 </body>
 </html>

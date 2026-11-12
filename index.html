@@ -224,7 +224,7 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
     <div class="row"></div>
     <label class="switch"><input type="checkbox" id="autoRe"> Auto-Rebirth <span class="muted" id="autoReNote"></span></label>
     <div class="row"></div>
-    <label class="switch"><input type="checkbox" id="autoRe"> Auto-Ascend <span class="muted" id="autoAsNote"></span></label>
+    <label class="switch"><input type="checkbox" id="autoAs"> Auto-Ascend <span class="muted" id="autoAsNote"></span></label>
     <div class="row"></div>
     <label class="switch"><input type="checkbox" id="autoCl"> Auto-Claim Codes <span class="muted" id="autoClNote"></span></label>
     <p class="muted" style="margin-top:12px">Unlocked automation does not turn on by itself. Switch it on here.</p>
@@ -421,7 +421,7 @@ const aItems = [
   {id:"overdrive",store:"ashop",cur:"ap",name:"Overdrive",base:1,growth:1.7,max:40,desc:l=>"+30% click power per level · now +"+l*30+"%"},
   {id:"efficient",store:"ashop",cur:"ap",name:"Efficient Rebirths",base:2,growth:2,max:10,desc:l=>"-10% rebirth requirement per level · now x"+Math.pow(0.9,l).toFixed(2)},
   {id:"autoRe",unlock:"autoRebirth",cur:"ap",name:"Auto-Rebirth",base:3,max:1,desc:()=>"Unlocks the Auto-Rebirth setting"}
- {id:"autoAs", unlock:"autoAscend",cur:"ap",name:"Auto-Ascend",base:4,max:1,desc:()=>"Unlocks the Auto-Ascend setting"}
+  {id:"autoAs",unlock:"autoAscend",cur:"ap",name:"Auto-Ascend",base:4,max:1,desc:()=>"Unlocks the Auto-Ascend setting"}
 ];
 
 const ACH = [
@@ -520,8 +520,8 @@ const fresh = () => ({
   owned: zero(upgrades.map(u => u.id)),
   rebirths:0, totalRebirths:0, rp:0, rshop: zero(["overcharge","generator","discount","headstart"]),
   ascensions:0, ap:0, ashop: zero(["core","overdrive","efficient"]),
-  unlocks:{autoUpgrade:false, autoRebirth:false, autoClaim:false},
-  settings:{autoUpgradeClick:false, autoUpgradeGen:false, autoRebirth:false, autoClaim:false, sound:false, volume:0.5},
+  unlocks:{autoUpgrade:false, autoRebirth:false, autoClaim:false, autoAscend:false},
+  settings:{autoUpgradeClick:false, autoUpgradeGen:false, autoRebirth:false, autoAscend:false, autoClaim:false, sound:false, volume:0.5},
   achieved:[], codes:[], challenge:{active:null, done:[]},
   boost:{mult:1, until:0}, stats:{playtime:0}, last:Date.now()
 });
@@ -689,12 +689,12 @@ function sanitize(d) {
   s.ascensions = int(d.ascensions, 0); s.ap = int(d.ap, 0);
   for (const it of aItems) if (it.store) s.ashop[it.id] = int(d.ashop && d.ashop[it.id], 0, it.max);
   const un = d.unlocks || {};
-  s.unlocks.autoUpgrade = !!un.autoUpgrade; s.unlocks.autoRebirth = !!un.autoRebirth; s.unlocks.autoClaim = !!un.autoClaim;
+  s.unlocks.autoUpgrade = !!un.autoUpgrade; s.unlocks.autoRebirth = !!un.autoRebirth ;s.unlocks.autoAscend = !!un.autoAscend; s.unlocks.autoClaim = !!un.autoClaim;
   const st = d.settings || {};
   const legacyUp = !!st.autoUpgrade;
   s.settings.autoUpgradeClick = st.autoUpgradeClick === undefined ? legacyUp : !!st.autoUpgradeClick;
   s.settings.autoUpgradeGen = st.autoUpgradeGen === undefined ? legacyUp : !!st.autoUpgradeGen;
-  s.settings.autoRebirth = !!st.autoRebirth; s.settings.autoClaim = !!st.autoClaim; s.settings.sound = !!st.sound;
+  s.settings.autoRebirth = !!st.autoRebirth; s.settings.autoAscend = !!st.autoAscend; s.settings.autoClaim = !!st.autoClaim; s.settings.sound = !!st.sound;
   s.settings.volume = Math.min(1, num(st.volume, 0.5));
   s.achieved = Array.isArray(d.achieved) ? d.achieved.filter(x => ACH.some(a => a.id === x)) : [];
   s.codes = Array.isArray(d.codes) ? d.codes.filter(x => CODES.some(c => c.code === x)) : [];
@@ -1111,6 +1111,8 @@ function ui() {
   $("autoUpCNote").textContent = $("autoUpGNote").textContent = un.autoUpgrade ? "" : "(locked · Rebirth Shop)";
   $("autoRe").disabled = !un.autoRebirth; $("autoRe").checked = un.autoRebirth && s.autoRebirth;
   $("autoReNote").textContent = un.autoRebirth ? "" : "(locked · Ascension Shop)";
+ $("autoAs").disabled = !un.autoAscend; $("autoAs").checked = un.autoAscend && s.autoAscend;
+  $("autoAsNote").textContent = un.autoAscend ? "" : "(locked · Ascension Shop)";
   $("autoCl").disabled = !un.autoClaim; $("autoCl").checked = un.autoClaim && s.autoClaim;
   $("autoClNote").textContent = un.autoClaim ? "" : "(locked · Rebirth Shop)";
   $("soundOn").checked = s.sound;
@@ -1202,6 +1204,7 @@ document.querySelectorAll("#nav button").forEach(b => b.addEventListener("click"
 $("autoUpC").addEventListener("change", e => { state.settings.autoUpgradeClick = e.target.checked; save(); });
 $("autoUpG").addEventListener("change", e => { state.settings.autoUpgradeGen = e.target.checked; save(); });
 $("autoRe").addEventListener("change", e => { state.settings.autoRebirth = e.target.checked; save(); });
+ $("autoAs").addEventListener("change", e => { state.settings.autoAscend = e.target.checked; save(); });
 $("autoCl").addEventListener("change", e => { state.settings.autoClaim = e.target.checked; save(); });
 $("soundOn").addEventListener("change", e => { state.settings.sound = e.target.checked; save(); });
 $("volume").addEventListener("input", e => { state.settings.volume = Number(e.target.value) / 100; });
@@ -1293,6 +1296,12 @@ setInterval(() => {
   }
   if (state.unlocks.autoUpgrade && now - lastAuto >= 500) { lastAuto = now; autoBuy(); }
   if (state.unlocks.autoRebirth && state.settings.autoRebirth && canRebirth()) doRebirth(true);
+  if (now >= nextRoll) {
+    nextRoll = now + 60000;
+    if (!boostActive()) for (let i = BOOST_TIERS.length - 1; i >= 0; i--) if (Math.random() < BOOST_TIERS[i].p) { startBoost(BOOST_TIERS[i].m, BOOST_SECS); break; }
+  }
+   }
+  if (state.unlocks.autoAscend && state.settings.autoAscend && canAscend()) doAscend(true);
   if (now >= nextRoll) {
     nextRoll = now + 60000;
     if (!boostActive()) for (let i = BOOST_TIERS.length - 1; i >= 0; i--) if (Math.random() < BOOST_TIERS[i].p) { startBoost(BOOST_TIERS[i].m, BOOST_SECS); break; }

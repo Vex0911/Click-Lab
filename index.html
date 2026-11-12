@@ -96,7 +96,7 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 </head>
 <body>
 <div class="wrap">
- <div class="top"><div><div class="brand">ENERGY LAB // 4.2</div><div class="sub">Energy Lab V4.2 Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
+ <div class="top"><div><div class="brand">ENERGY LAB // 4.3</div><div class="sub">Energy Lab V4.3 Pre-Release 1.0</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
  <div class="warn" id="storeWarn" hidden>Saving isn't fully available in this embedded view, so progress may only last until you close the tab. Go to Settings and use Export save file or Copy save code to keep your progress.</div>
  <div class="boost" id="boost" hidden></div>
  <section class="stats">
@@ -1126,6 +1126,37 @@ $("copyPlayerIdBtn").addEventListener("click", async () => {
       toast(ok ? "Player ID copied." : "Clipboard unavailable. Select the Player ID and copy it manually.");
     }
   } catch (e) { toast("Clipboard unavailable. Select the Player ID and copy it manually."); }
+});
+ function readOwnerAmount(id) {
+  const amount = Number($(id).value);
+  if (!Number.isSafeInteger(amount) || amount < 1 || amount > 1000000) {
+    toast("Enter a whole number from 1 to 1,000,000.");
+    return null;
+  }
+  return amount;
+}
+
+$("addRebirthBtn").addEventListener("click", () => {
+  if (!IS_OWNER) return;
+  const amount = readOwnerAmount("addRebirthAmount");
+  if (amount === null) return;
+
+  state.rebirths += amount;
+  state.totalRebirths += amount;
+  ui();
+  save();
+  toast("Added " + amount + " rebirth" + (amount === 1 ? "." : "s."));
+});
+
+$("addAscensionBtn").addEventListener("click", () => {
+  if (!IS_OWNER) return;
+  const amount = readOwnerAmount("addAscensionAmount");
+  if (amount === null) return;
+
+  state.ascensions += amount;
+  ui();
+  save();
+  toast("Added " + amount + " ascension" + (amount === 1 ? "." : "s."));
 });
 $("ownerMultiplierRange").addEventListener("input", e => {
   if (!IS_OWNER) return;

@@ -237,7 +237,24 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
     <input id="mp3File" type="file" accept="audio/mpeg,.mp3" hidden>
     <p class="muted" id="soundNote">Using the built-in blip. Custom sounds are MP3 only (max 1.5 MB). Since this is an HTML game, it might not work in every browser or embed.</p>
    </section>
-   <section id="tab-owner" hidden>
+   <section class="panel" style="margin-top:14px">
+   <div class="panel-head"><h2>Save</h2><span class="muted" id="storeMode"></span></div>
+   <div class="controls" style="justify-content:flex-start;margin-top:0">
+    <button id="saveBtn">Save now</button>
+    <button id="exportBtn">Export save file</button>
+    <button id="copyBtn">Copy save code</button>
+    <button id="importFileBtn">Import save file</button>
+    <button class="danger" id="resetBtn">Reset game</button>
+   </div>
+   <input id="importFile" type="file" accept=".txt,.elsave,text/plain" hidden>
+   <textarea id="saveText" rows="3" placeholder="Your V4 save code appears here. Paste a supported save code here and press Import code." spellcheck="false"></textarea>
+   <div class="controls" style="justify-content:flex-start;margin-top:8px"><button id="importBtn">Import code</button></div>
+   <p class="muted" style="margin-top:10px">V4 uses a versioned save format with integrity checks, automatic V3 migration, and two rolling backups. Autosaves every 10 seconds. V3 save codes remain importable. Player ID and Owner settings are stored separately from progression.</p>
+  </section>
+ </section>
+</div>
+ 
+<section id="tab-owner" hidden>
   <section class="panel owner-panel" id="ownerPanel">
     <div class="panel-head"><h2>Owner Panel</h2><span class="owner-badge">OWNER ACCESS</span></div>
     <p class="muted">Owner-only local game controls. Changes apply in this browser and are kept separately from your progression save.</p>
@@ -268,22 +285,6 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
   </section>
 </section>
   </div>
-  <section class="panel" style="margin-top:14px">
-   <div class="panel-head"><h2>Save</h2><span class="muted" id="storeMode"></span></div>
-   <div class="controls" style="justify-content:flex-start;margin-top:0">
-    <button id="saveBtn">Save now</button>
-    <button id="exportBtn">Export save file</button>
-    <button id="copyBtn">Copy save code</button>
-    <button id="importFileBtn">Import save file</button>
-    <button class="danger" id="resetBtn">Reset game</button>
-   </div>
-   <input id="importFile" type="file" accept=".txt,.elsave,text/plain" hidden>
-   <textarea id="saveText" rows="3" placeholder="Your V4 save code appears here. Paste a supported save code here and press Import code." spellcheck="false"></textarea>
-   <div class="controls" style="justify-content:flex-start;margin-top:8px"><button id="importBtn">Import code</button></div>
-   <p class="muted" style="margin-top:10px">V4 uses a versioned save format with integrity checks, automatic V3 migration, and two rolling backups. Autosaves every 10 seconds. V3 save codes remain importable. Player ID and Owner settings are stored separately from progression.</p>
-  </section>
- </section>
-</div>
 
 <div class="codechip" id="codeChip" hidden><span class="muted">New code:</span><b id="chipCode"></b><button class="primary" id="chipUse">Redeem</button><button class="quiet" id="chipX" aria-label="Dismiss">✕</button></div>
 <div class="toast" id="toast"></div>

@@ -96,7 +96,7 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 </head>
 <body>
 <div class="wrap">
- <div class="top"><div><div class="brand">ENERGY LAB // 4.1</div><div class="sub">Energy Lab V4.1 Pre-Release 2.1</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
+ <div class="top"><div><div class="brand">ENERGY LAB // 4.1</div><div class="sub">Energy Lab V4.1 Pre-Release 2.2</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
  <div class="warn" id="storeWarn" hidden>Saving isn't fully available in this embedded view, so progress may only last until you close the tab. Go to Settings and use Export save file or Copy save code to keep your progress.</div>
  <div class="boost" id="boost" hidden></div>
  <section class="stats">
@@ -488,7 +488,7 @@ const IS_OWNER = PLAYER_ID === OWNER_PLAYER_ID;
 const OWNER_SETTINGS_KEY = "energyLabOwnerSettings40";
 function readOwnerMultiplier() {
   const raw = Number(store.get(OWNER_SETTINGS_KEY));
-  return Number.isFinite(raw) ? Math.max(1, Math.min(50, Math.round(raw * 2) / 2)) : 1;
+  return Number.isFinite(raw) ? Math.max(0.5, Math.min(50, Math.round(raw * 2) / 2)) : 1;
 }
 let ownerMultiplier = readOwnerMultiplier();
 

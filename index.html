@@ -342,7 +342,7 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 
    <div class="owner-setting">
     <label for="addAscensionAmount">Add Ascension:</label>
-    <input type="number" id="addAscensionAmount" min="1" max="1000000" step="1" value="1">
+    <input type="number" id="addAscensionAmount" min="1" max="9999999" step="1" value="1">
     <button id="addAscensionBtn">Add</button>
    </div>
 
@@ -706,7 +706,7 @@ function currentAscensionTier() {
   return tier;
 }
 const ascensionTierMultiplier = () => currentAscensionTier().multiplier;
-const rebirthReq = () => Math.ceil(20000 * Math.pow(1.7, state.rebirths) * Math.pow(0.9, aLvl("efficient")) * (chal() === "heavy" ? 2 : 1));
+const rebirthReq = () => Math.ceil(10000 * Math.pow(1.5, state.rebirths) * Math.pow(0.9, aLvl("efficient")) * (chal() === "heavy" ? 2 : 1));
 const canRebirth = () => state.energy >= rebirthReq();
 const rpGain = () => Math.max(1, Math.floor(1 + 2 * Math.log10(Math.max(1, state.energy / rebirthReq()))));
 const ascendReq = () => Math.ceil(10 * Math.pow(1.5, state.ascensions));

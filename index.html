@@ -58,9 +58,9 @@ button:disabled{opacity:.42;cursor:not-allowed;filter:none}
 .acts{display:flex;gap:6px}
 .buy{min-width:84px;text-align:center}
 .buy b{display:block;font-size:13px}.buy small{font-size:10px;color:var(--muted)}
-.bulkbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
-.bulkbar button{padding:5px 10px;font-size:12px}
-.bulkbar button.on{background:#143a4a;border-color:#3aa7c2;color:var(--cyan)}
+.bulkbar,.tabbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+.bulkbar button,.tabbar button{padding:5px 10px;font-size:12px}
+.bulkbar button.on,.tabbar button.on{background:#143a4a;border-color:#3aa7c2;color:var(--cyan)}
 .bulkbar.sell button.on{background:#3a2340;border-color:#a0529a;color:#ffb3f0}
 .bulkbar input{width:80px;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:#0b1222;color:var(--text);font:inherit;font-size:12px}
 .bulk-holder{margin-bottom:6px}
@@ -72,8 +72,10 @@ button:disabled{opacity:.42;cursor:not-allowed;filter:none}
 .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:10px 0}
 .switch{display:flex;gap:8px;align-items:center}
 input[type=text]{padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:#0b1222;color:var(--text);font:inherit;text-transform:uppercase;min-width:180px}
+input[type=text].nocase{text-transform:none}
 textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:#0b1222;color:var(--text);font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;resize:vertical}
 .codeitem{padding:7px 10px;border:1px solid var(--line);border-radius:10px;margin:6px 0;display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.win{color:var(--green)}.lose{color:var(--red)}
 .statrow{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
 .statrow:last-child{border-bottom:0}.statrow span:first-child{color:var(--muted)}
 .player-id-card{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;background:#101828;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px}
@@ -85,6 +87,17 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 .owner-setting{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:12px 0}
 .owner-setting input[type=range]{flex:1;min-width:180px;accent-color:#ffd166}
 .owner-value{min-width:42px;color:#ffda83;font-weight:800;font-variant-numeric:tabular-nums}
+.lbrow{display:grid;grid-template-columns:44px 1fr auto;gap:8px;align-items:center;padding:7px 10px;border-radius:10px;font-size:13px;border:1px solid transparent}
+.lbrow:nth-child(odd){background:#101828}
+.lbrow.you{background:#143a4a;border-color:#3aa7c2}
+.lbrow .rk{color:var(--muted);font-weight:800}
+.lbrow:nth-child(1) .rk{color:#ffd166}.lbrow:nth-child(2) .rk{color:#d6dde8}.lbrow:nth-child(3) .rk{color:#e0a070}
+.lbrow .nm{overflow-wrap:anywhere}
+.lbrow .vl{font-weight:800;font-variant-numeric:tabular-nums}
+.gamebtn{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:12px}
+.gamebtn b{display:block;font-size:14px}.gamebtn small{color:var(--muted);font-size:11px}
+.gamebtn.on{background:#143a4a;border-color:#3aa7c2}
+.gresult{min-height:26px;font-weight:800;margin-top:8px}
 .toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,20px);opacity:0;background:#202d4a;border:1px solid #526a9b;padding:10px 15px;border-radius:12px;pointer-events:none;transition:.2s;max-width:90%;text-align:center;z-index:30}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .codechip{position:fixed;right:14px;bottom:70px;background:#1d2b4d;border:1px solid var(--gold);border-radius:14px;padding:10px 12px;display:flex;gap:8px;align-items:center;z-index:25;box-shadow:0 8px 30px #0008}
@@ -96,7 +109,7 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 </head>
 <body>
 <div class="wrap">
- <div class="top"><div><div class="brand">ENERGY LAB // 4.3</div><div class="sub">Energy Lab V4.3 Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
+ <div class="top"><div><div class="brand">ENERGY LAB // 5.0</div><div class="sub">Energy Lab V5 Pre-Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
  <div class="warn" id="storeWarn" hidden>Saving isn't fully available in this embedded view, so progress may only last until you close the tab. Go to Settings and use Export save file or Copy save code to keep your progress.</div>
  <div class="boost" id="boost" hidden></div>
  <section class="stats">
@@ -111,10 +124,12 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
   <button data-tab="rebirth">Rebirth</button>
   <button data-tab="ascension">Ascension</button>
   <button data-tab="challenges">Challenges</button>
+  <button data-tab="gamble">Gamble</button>
   <button data-tab="codes">Codes</button>
+  <button data-tab="leaderboard">Leaderboard</button>
   <button data-tab="stats">Stats</button>
   <button data-tab="settings">Settings</button>
-  <button data-tab="owner">Owner</button>
+  <button data-tab="owner" hidden>Owner</button>
  </nav>
 
  <section id="tab-core">
@@ -185,9 +200,36 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
   <section class="panel">
    <div class="panel-head"><h2>Challenges</h2><span class="muted" id="chCount"></span></div>
    <div class="notice" id="chLock">Ascend once to unlock challenges.</div>
-   <p class="muted" id="chIntro" hidden>Starting a challenge resets your run like an ascension (no Ascension Points). Reach the ascension requirement under the challenge rules, then complete it for a permanent reward.</p>
-   <div class="card-list" id="chList"></div>
+   <div id="chBody" hidden>
+    <p class="muted">Starting a challenge resets your run like an ascension (no Ascension Points). Reach the ascension requirement under the challenge rules, then complete it for a permanent reward. Three random challenges are offered at a time. Rerolling the offers costs energy.</p>
+    <div class="row" style="margin-top:0"><button class="primary" id="chRerollBtn">Reroll offers</button><span class="muted" id="chRerollNote"></span></div>
+    <div class="card-list" id="chList"></div>
+    <h3 class="group" id="chDoneHead" hidden>Completed</h3>
+    <div id="chDone"></div>
+   </div>
   </section>
+ </section>
+
+ <section id="tab-gamble" hidden>
+  <div class="grid2">
+   <section class="panel">
+    <div class="panel-head"><h2>Casino</h2><span class="muted" id="gBalance"></span></div>
+    <div class="tabbar" id="gCurBar"></div>
+    <div class="card-list" id="gGames"></div>
+    <div class="row">
+     <input type="text" class="nocase" id="gAmount" placeholder="Wager (e.g. 5000 or 5K)" autocomplete="off">
+     <button class="primary" id="gBetBtn">Gamble</button>
+    </div>
+    <div class="tabbar" id="gPct"></div>
+    <div class="gresult" id="gResult"></div>
+    <p class="muted" id="gInfo"></p>
+    <p class="muted">Every game pays back about 90% on average, so the house wins over time. You can gamble Energy, Rebirth Points and Ascension Points. Rebirth Points and Ascension Points are whole numbers and wins are rounded down.</p>
+   </section>
+   <section class="panel">
+    <div class="panel-head"><h2>Recent bets</h2><span class="muted" id="gStats"></span></div>
+    <div id="gHistory"></div>
+   </section>
+  </div>
  </section>
 
  <section id="tab-codes" hidden>
@@ -199,13 +241,40 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
   </section>
  </section>
 
+ <section id="tab-leaderboard" hidden>
+  <div class="grid2">
+   <section class="panel">
+    <div class="panel-head"><h2>Your Profile</h2><span class="muted" id="lbConn"></span></div>
+    <div class="warn" id="lbSetup" hidden>The leaderboard server isn't connected yet. Add your Supabase project URL and public key at the top of the script (see the setup notes). The rest of the game works without it.</div>
+    <div class="statrow"><span>Username</span><span id="lbName">Not set</span></div>
+    <div class="row">
+     <input type="text" class="nocase" id="usernameInput" maxlength="16" placeholder="Choose a username" autocomplete="off">
+     <button class="primary" id="usernameBtn">Set username</button>
+    </div>
+    <p class="muted" id="usernameMsg">3 to 16 letters, numbers or underscores. You can change it once every 24 hours.</p>
+    <p class="muted" id="lbSubmitInfo"></p>
+    <h3 class="group">Recovery key</h3>
+    <p class="muted">Your Player ID and its secret live in this browser. The recovery key lets you restore the same identity (and username) on another device or after clearing your browser. Treat it like a password.</p>
+    <div class="controls" style="justify-content:flex-start;margin-top:8px"><button id="copyKeyBtn">Copy recovery key</button></div>
+    <textarea id="keyText" rows="2" placeholder="Paste a recovery key here to restore your identity on this device" spellcheck="false"></textarea>
+    <div class="controls" style="justify-content:flex-start;margin-top:8px"><button id="restoreKeyBtn">Restore identity</button></div>
+   </section>
+   <section class="panel">
+    <div class="panel-head"><h2>Leaderboard</h2><button id="lbRefresh">Refresh</button></div>
+    <div class="tabbar" id="lbBoards"></div>
+    <div id="lbList"></div>
+    <div class="muted" id="lbMeta" style="margin-top:8px"></div>
+   </section>
+  </div>
+ </section>
+
  <section id="tab-stats" hidden>
   <section class="panel">
-   <div class="panel-head"><h2>Player Identity</h2><span><span class="muted">Local ID</span> <span class="owner-badge" id="ownerBadge" hidden>OWNER</span></span></div>
+   <div class="panel-head"><h2>Player Identity</h2><span><span class="muted">Player ID</span> <span class="owner-badge" id="ownerBadge" hidden>OWNER</span></span></div>
    <div class="player-id-card">
     <div class="player-id-value" id="playerIdValue" aria-label="Your permanent Player ID"></div>
     <button id="copyPlayerIdBtn">Copy ID</button>
-    <p class="muted player-id-note">This local ID stays the same through progress resets, save imports, rebirths, ascensions, and game updates. It is not tied to your IP address. Clearing browser storage can erase it; global account registration and cross-device recovery require the future server.</p>
+    <p class="muted player-id-note">This ID stays the same through progress resets, save imports, rebirths, ascensions, and game updates. It is random and not tied to your IP address. It is registered with the leaderboard server when you set a username. Use the recovery key on the Leaderboard tab to keep it if you clear your browser or switch devices.</p>
    </div>
   </section>
   <section class="panel" style="margin-top:14px">
@@ -237,7 +306,8 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
     <input id="mp3File" type="file" accept="audio/mpeg,.mp3" hidden>
     <p class="muted" id="soundNote">Using the built-in blip. Custom sounds are MP3 only (max 1.5 MB). Since this is an HTML game, it might not work in every browser or embed.</p>
    </section>
-   <section class="panel" style="margin-top:14px">
+  </div>
+  <section class="panel" style="margin-top:14px">
    <div class="panel-head"><h2>Save</h2><span class="muted" id="storeMode"></span></div>
    <div class="controls" style="justify-content:flex-start;margin-top:0">
     <button id="saveBtn">Save now</button>
@@ -252,39 +322,38 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
    <p class="muted" style="margin-top:10px">V4 uses a versioned save format with integrity checks, automatic V3 migration, and two rolling backups. Autosaves every 10 seconds. V3 save codes remain importable. Player ID and Owner settings are stored separately from progression.</p>
   </section>
  </section>
-</div>
- 
-<section id="tab-owner" hidden>
+
+ <section id="tab-owner" hidden>
   <section class="panel owner-panel" id="ownerPanel">
-    <div class="panel-head"><h2>Owner Panel</h2><span class="owner-badge">OWNER ACCESS</span></div>
-    <p class="muted">Owner-only local game controls. Changes apply in this browser and are kept separately from your progression save.</p>
+   <div class="panel-head"><h2>Owner Panel</h2><span class="owner-badge">OWNER ACCESS</span></div>
+   <p class="muted">Owner-only local game controls. Changes apply in this browser and are kept separately from your progression save. Using any of them turns off leaderboard submissions for the current save.</p>
 
-    <div class="owner-setting">
-      <label for="ownerMultiplierRange">Global production multiplier</label>
-      <input type="range" id="ownerMultiplierRange" min="1" max="500" step="0.5" value="1">
-      <span class="owner-value" id="ownerMultiplierValue">1.0x</span>
-    </div>
+   <div class="owner-setting">
+    <label for="ownerMultiplierRange">Global production multiplier</label>
+    <input type="range" id="ownerMultiplierRange" min="1" max="500" step="0.5" value="1">
+    <span class="owner-value" id="ownerMultiplierValue">1.0x</span>
+   </div>
 
-    <div class="owner-setting">
-      <label for="addRebirthAmount">Add Rebirth:</label>
-      <input type="number" id="addRebirthAmount" min="1" max="1000000" step="1" value="1">
-      <button id="addRebirthBtn">Add</button>
-    </div>
+   <div class="owner-setting">
+    <label for="addRebirthAmount">Add Rebirth:</label>
+    <input type="number" id="addRebirthAmount" min="1" max="1000000" step="1" value="1">
+    <button id="addRebirthBtn">Add</button>
+   </div>
 
-    <div class="owner-setting">
-      <label for="addAscensionAmount">Add Ascension:</label>
-      <input type="number" id="addAscensionAmount" min="1" max="1000000" step="1" value="1">
-      <button id="addAscensionBtn">Add</button>
-    </div>
+   <div class="owner-setting">
+    <label for="addAscensionAmount">Add Ascension:</label>
+    <input type="number" id="addAscensionAmount" min="1" max="1000000" step="1" value="1">
+    <button id="addAscensionBtn">Add</button>
+   </div>
 
-    <div class="controls" style="justify-content:flex-start;margin-top:8px">
-      <button id="ownerResetBtn">Reset owner settings</button>
-    </div>
-    <p class="muted" id="ownerStatus">Production multiplier is currently 1.0x.</p>
-    <p class="muted">This is a local owner interface, not secure account authentication. A server-side owner check is required before using it for online/global administration.</p>
+   <div class="controls" style="justify-content:flex-start;margin-top:8px">
+    <button id="ownerResetBtn">Reset owner settings</button>
+   </div>
+   <p class="muted" id="ownerStatus">Production multiplier is currently 1.0x.</p>
+   <p class="muted">This is a local owner interface, not secure account authentication. A server-side owner check is required before using it for online/global administration.</p>
   </section>
-</section>
-  </div>
+ </section>
+</div>
 
 <div class="codechip" id="codeChip" hidden><span class="muted">New code:</span><b id="chipCode"></b><button class="primary" id="chipUse">Redeem</button><button class="quiet" id="chipX" aria-label="Dismiss">✕</button></div>
 <div class="toast" id="toast"></div>
@@ -293,21 +362,45 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 <script>
 (() => {
 "use strict";
+
+/* ---------- online leaderboard config (Supabase) ----------
+   Paste your project URL and your public key (anon or publishable) here.
+   Leave both empty to play fully offline. */
+const SUPABASE_URL = "[https://uxczlndiqsshfohzhcbx.supabase.co] (https://uxczlndiqsshfohzhcbx.supabase.co)";
+const SUPABASE_ANON_KEY = "sb_publishable_qDOePGjwQKQo9y3rvNfi4Q_2snx7JLn";
+
 const $ = id => document.getElementById(id);
 const el = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
 const rand = (a, b) => a + Math.random() * (b - a);
+function secureRandom() {
+  try { const a = new Uint32Array(1); window.crypto.getRandomValues(a); return a[0] / 4294967296; } catch (e) { return Math.random(); }
+}
+function randomHex(n) {
+  const b = new Uint8Array(n);
+  if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(b);
+  else for (let i = 0; i < n; i++) b[i] = Math.floor(Math.random() * 256);
+  return Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
+}
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(secureRandom() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
 
 /* ---------- constants ---------- */
-const VERSION = "4.1";
+const VERSION = "4.4";
 const SAVE_SCHEMA = 4;
 const KEY = "energyLabSave40", BAK1 = "energyLabSave40b", BAK2 = "energyLabSave40c";
 const SKEY = "energyLabSound40";
 const LEGACY_SAVE_KEYS = ["energyLabSave30", "energyLabSave30b", "energyLabSave30c", "energyLabSave21"];
 const LEGACY_SOUND_KEY = "energyLabSound30";
 const PLAYER_ID_KEY = "energyLabPlayerId40";
+const PLAYER_SECRET_KEY = "energyLabPlayerSecret40";
+const USERNAME_KEY = "energyLabUsername40";
 const SID = Math.random().toString(36).slice(2) + Date.now().toString(36);
 const SELL_RETURN = 0.9;
 const UPGRADE_CAP = 5000;
+const OFFER_COUNT = 3;
 const CODE_FIRST = [240000, 480000], CODE_NEXT = [480000, 1200000]; // ms
 // Random boost: rolled once a minute, lasts 30s. p = chance per roll. 1.1x starts at 1%, higher = rarer.
 const BOOST_TIERS = [{m:1.1,p:0.01},{m:1.25,p:0.006},{m:1.5,p:0.0035},{m:1.75,p:0.002},{m:2,p:0.001},{m:2.5,p:0.0005}];
@@ -328,6 +421,10 @@ function fmtTime(sec) {
   sec = Math.floor(sec);
   const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
   return (h ? h + "h " : "") + (h || m ? m + "m " : "") + s + "s";
+}
+function ago(t) {
+  const s = Math.max(0, Math.floor((Date.now() - t) / 1000));
+  return s < 5 ? "just now" : s < 60 ? s + "s ago" : Math.floor(s / 60) + "m ago";
 }
 
 const upgrades = [
@@ -352,7 +449,13 @@ upgrades.forEach(u => u.desc = "+" + u.amount.toLocaleString() + (u.kind === "cl
 const CHALLENGES = [
   {id:"purist",name:"Click Purist",desc:"Reach the ascension requirement buying only click upgrades.",rewardText:"x1.5 click power, permanently",reward:{click:1.5}},
   {id:"monk",name:"Idle Monk",desc:"Click upgrades do nothing: your base click stays at 1.",rewardText:"x1.5 energy per second, permanently",reward:{rate:1.5}},
-  {id:"bare",name:"Bare Bones",desc:"Rebirth Shop and Ascension Shop effects are switched off.",rewardText:"x1.25 click power and energy per second, permanently",reward:{click:1.25,rate:1.25}}
+  {id:"bare",name:"Bare Bones",desc:"Rebirth Shop and Ascension Shop effects are switched off.",rewardText:"x1.25 click power and energy per second, permanently",reward:{click:1.25,rate:1.25}},
+  {id:"pricey",name:"Pricey Parts",desc:"Every upgrade costs double.",rewardText:"x1.4 energy per second, permanently",reward:{rate:1.4}},
+  {id:"lean",name:"Lean Machine",desc:"You can own at most 100 of each upgrade.",rewardText:"x1.4 click power, permanently",reward:{click:1.4}},
+  {id:"fresh",name:"Fresh Starts",desc:"Rebirth Shop effects are switched off.",rewardText:"x1.3 click power, permanently",reward:{click:1.3}},
+  {id:"grounded",name:"Grounded",desc:"Ascension Shop effects are switched off.",rewardText:"x1.3 energy per second, permanently",reward:{rate:1.3}},
+  {id:"heavy",name:"Heavy Cycles",desc:"Rebirths need double the energy.",rewardText:"x1.25 click power and energy per second, permanently",reward:{click:1.25,rate:1.25}},
+  {id:"dry",name:"Boost Drought",desc:"Energy boosts do nothing.",rewardText:"x1.2 click power and energy per second, permanently",reward:{click:1.2,rate:1.2}}
 ];
 
 const CODES = [
@@ -438,9 +541,11 @@ const ACH = [
   {id:"ascend",name:"Beyond the Core",test:s=>s.ascensions>0},
   {id:"asc3",name:"Triple Ascent",test:s=>s.ascensions>=3},
   {id:"challenger",name:"Challenger",test:s=>s.challenge.done.length>0},
-  {id:"allchal",name:"Trial Master",test:s=>s.challenge.done.length>=3},
+  {id:"allchal",name:"Trial Master",test:s=>s.challenge.done.length>=CHALLENGES.length},
   {id:"coder",name:"Code Breaker",test:s=>s.codes.length>0},
-  {id:"codes10",name:"Code Collector",test:s=>s.codes.length>=10}
+  {id:"codes10",name:"Code Collector",test:s=>s.codes.length>=10},
+  {id:"gambler",name:"High Roller",test:s=>s.gamble.plays>=25},
+  {id:"jackpot",name:"Jackpot!",test:s=>s.gamble.jackpots>=1}
 ];
 
 const STATS = [
@@ -452,9 +557,25 @@ const STATS = [
   ["Total rebirths", s => s.totalRebirths.toLocaleString()],
   ["Ascensions", s => s.ascensions.toLocaleString()],
   ["Challenges completed", s => s.challenge.done.length + " / " + CHALLENGES.length],
+  ["Challenge rerolls", s => s.challenge.rerolls.toLocaleString()],
+  ["Bets placed", s => s.gamble.plays.toLocaleString()],
+  ["Bets won", s => s.gamble.wins.toLocaleString()],
   ["Codes used", s => s.codes.length + " / " + CODES.length],
   ["Milestones", s => s.achieved.length + " / " + ACH.length]
 ];
+
+/* ---------- casino definitions ---------- */
+const GAMES = [
+  {id:"safe", name:"Safe Bet", chance:0.45, mult:2},
+  {id:"risky", name:"Risky Bet", chance:0.18, mult:5},
+  {id:"jackpot", name:"Jackpot", chance:0.045, mult:20}
+];
+const CURRENCIES = {
+  energy:{key:"energy", name:"Energy", short:"Energy", int:false},
+  rp:{key:"rp", name:"Rebirth Points", short:"RP", int:true},
+  ap:{key:"ap", name:"Ascension Points", short:"AP", int:true}
+};
+const gambleUI = {cur:"energy", game:"safe", history:[]};
 
 /* ---------- storage (works in embeds where localStorage is blocked) ---------- */
 const store = (() => {
@@ -483,6 +604,8 @@ const store = (() => {
 })();
 
 /* ---------- player identity ---------- */
+const ID_RE = /^EL-[0-9A-F]{8}(?:-[0-9A-F]{4}){3}-[0-9A-F]{12}$/;
+const USERNAME_RE = /^[A-Za-z0-9_]{3,16}$/;
 function generatePlayerId() {
   const bytes = new Uint8Array(16);
   if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(bytes);
@@ -495,14 +618,22 @@ function generatePlayerId() {
 }
 function getPlayerId() {
   const saved = store.get(PLAYER_ID_KEY);
-  if (typeof saved === "string" && /^EL-[0-9A-F]{8}(?:-[0-9A-F]{4}){3}-[0-9A-F]{12}$/.test(saved)) return saved;
+  if (typeof saved === "string" && ID_RE.test(saved)) return saved;
   const id = generatePlayerId();
   store.set(PLAYER_ID_KEY, id);
   return id;
 }
-const PLAYER_ID = getPlayerId();
+function getPlayerSecret() {
+  const saved = store.get(PLAYER_SECRET_KEY);
+  if (typeof saved === "string" && /^[0-9a-f]{64}$/.test(saved)) return saved;
+  const s = randomHex(32);
+  store.set(PLAYER_SECRET_KEY, s);
+  return s;
+}
+let PLAYER_ID = getPlayerId();
+let PLAYER_SECRET = getPlayerSecret();
 const OWNER_PLAYER_ID = "EL-13B6729B-7DF0-4369-A078-FAA9831EA890";
-const IS_OWNER = PLAYER_ID === OWNER_PLAYER_ID;
+let IS_OWNER = PLAYER_ID === OWNER_PLAYER_ID;
 const OWNER_SETTINGS_KEY = "energyLabOwnerSettings40";
 function readOwnerMultiplier() {
   const raw = Number(store.get(OWNER_SETTINGS_KEY));
@@ -519,7 +650,8 @@ const fresh = () => ({
   ascensions:0, ap:0, ashop: zero(["core","overdrive","efficient"]),
   unlocks:{autoUpgrade:false, autoRebirth:false, autoClaim:false},
   settings:{autoUpgradeClick:false, autoUpgradeGen:false, autoRebirth:false, autoClaim:false, sound:false, volume:0.5},
-  achieved:[], codes:[], challenge:{active:null, done:[]},
+  achieved:[], codes:[], challenge:{active:null, done:[], offers:[], rerolls:0},
+  gamble:{plays:0, wins:0, jackpots:0}, tainted:false,
   boost:{mult:1, until:0}, stats:{playtime:0}, last:Date.now()
 });
 let state = fresh();
@@ -528,11 +660,11 @@ let clickTimes = [], customData = null, customAudio = null, ac = null;
 
 /* ---------- derived values ---------- */
 const chal = () => state.challenge.active;
-const shopOn = () => chal() !== "bare";
-const rLvl = k => shopOn() ? state.rshop[k] : 0;
-const aLvl = k => shopOn() ? state.ashop[k] : 0;
+const rLvl = k => (chal() === "bare" || chal() === "fresh") ? 0 : state.rshop[k];
+const aLvl = k => (chal() === "bare" || chal() === "grounded") ? 0 : state.ashop[k];
 const boostActive = () => Date.now() < state.boost.until;
-const boostMult = () => boostActive() ? state.boost.mult : 1;
+const boostMult = () => (boostActive() && chal() !== "dry") ? state.boost.mult : 1;
+const upgradeCap = () => chal() === "lean" ? 100 : UPGRADE_CAP;
 const rebirthMult = () => 1 + 0.2 * state.rebirths;
 const ascMult = () => (1 + 0.5 * state.ascensions) * ascensionTierMultiplier() * (1 + 0.25 * aLvl("core"));
 function chalMult(kind) { let m = 1; for (const c of CHALLENGES) if (state.challenge.done.includes(c.id)) m *= (c.reward[kind] || 1); return m; }
@@ -547,7 +679,7 @@ function rate(noBoost) {
   return base * rebirthMult() * ascMult() * (noBoost ? 1 : boostMult()) * chalMult("rate") * (1 + 0.1 * rLvl("generator")) * ownerMultiplier;
 }
 const discount = () => Math.min(0.4, 0.02 * rLvl("discount"));
-const cost = (u, level) => Math.ceil(u.base * Math.pow(u.growth, level === undefined ? state.owned[u.id] : level) * (1 - discount()));
+const cost = (u, level) => Math.ceil(u.base * Math.pow(u.growth, level === undefined ? state.owned[u.id] : level) * (1 - discount()) * (chal() === "pricey" ? 2 : 1));
 const canBuyType = u => !(chal() === "purist" && u.kind === "rate");
 
 function wantAmount(b, room, maxWord) {
@@ -558,7 +690,7 @@ function wantAmount(b, room, maxWord) {
 }
 // buy plan for an upgrade: how many, total cost, can we afford it
 function buyPlan(u) {
-  const o = state.owned[u.id], room = UPGRADE_CAP - o;
+  const o = state.owned[u.id], room = upgradeCap() - o;
   if (room <= 0) return {n:0, total:0, afford:false, maxed:true};
   const maxMode = bulk.buy.mode === "max";
   const want = Math.min(room, wantAmount(bulk.buy, room, "max"));
@@ -588,7 +720,7 @@ function currentAscensionTier() {
   return tier;
 }
 const ascensionTierMultiplier = () => currentAscensionTier().multiplier;
-const rebirthReq = () => Math.ceil(20000 * Math.pow(1.7, state.rebirths) * Math.pow(0.9, aLvl("efficient")));
+const rebirthReq = () => Math.ceil(20000 * Math.pow(1.7, state.rebirths) * Math.pow(0.9, aLvl("efficient")) * (chal() === "heavy" ? 2 : 1));
 const canRebirth = () => state.energy >= rebirthReq();
 const rpGain = () => Math.max(1, Math.floor(1 + 2 * Math.log10(Math.max(1, state.energy / rebirthReq()))));
 const ascendReq = () => Math.ceil(10 * Math.pow(1.5, state.ascensions));
@@ -632,10 +764,7 @@ function updateStatus() {
   if (conflict) { t = "⚠ autosave paused (another tab)"; bad = true; }
   else if (saveFailed) { t = "⚠ save failed"; bad = true; }
   else if (!lastSaveAt) t = "autosave ready";
-  else {
-    const s = Math.floor((Date.now() - lastSaveAt) / 1000);
-    t = (store.mode === "local" ? "saved " : "temp-saved ") + (s < 5 ? "just now" : s < 60 ? s + "s ago" : Math.floor(s / 60) + "m ago");
-  }
+  else t = (store.mode === "local" ? "saved " : "temp-saved ") + ago(lastSaveAt);
   e.textContent = t; e.classList.toggle("bad", bad);
 }
 function sane() {
@@ -698,6 +827,13 @@ function sanitize(d) {
   const ch = d.challenge || {};
   s.challenge.active = CHALLENGES.some(c => c.id === ch.active) ? ch.active : null;
   s.challenge.done = Array.isArray(ch.done) ? ch.done.filter(x => CHALLENGES.some(c => c.id === x)) : [];
+  s.challenge.offers = Array.isArray(ch.offers)
+    ? Array.from(new Set(ch.offers.filter(x => CHALLENGES.some(c => c.id === x) && !s.challenge.done.includes(x)))).slice(0, OFFER_COUNT)
+    : [];
+  s.challenge.rerolls = int(ch.rerolls, 0);
+  const g = d.gamble || {};
+  s.gamble = {plays:int(g.plays, 0), wins:int(g.wins, 0), jackpots:int(g.jackpots, 0)};
+  s.tainted = !!d.tainted;
   const bo = d.boost || {};
   s.boost = {mult: Math.min(2.5, num(bo.mult, 1, 1)), until: num(bo.until, 0)};
   s.stats = {playtime: num(d.stats && d.stats.playtime, 0)};
@@ -764,12 +900,12 @@ function applyImport(text) {
     ui(); save(); toast("Save imported.");
   });
 }
-function copyText(text) {
-  const done = () => toast("Save code copied.");
+function copyText(text, okMsg, boxId) {
+  const done = () => toast(okMsg);
   const fallback = () => {
-    const ta = $("saveText"); ta.value = text; ta.focus(); ta.select();
+    const ta = $(boxId); ta.value = text; ta.focus(); ta.select();
     let ok = false; try { ok = document.execCommand("copy"); } catch (e) {}
-    toast(ok ? "Save code copied." : "Select the code in the box and copy it manually.");
+    toast(ok ? okMsg : "Select the text in the box and copy it manually.");
   };
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
   else fallback();
@@ -872,7 +1008,36 @@ function sellShop(it) {
   ui(); save();
 }
 
+/* challenges: random offers + paid reroll */
+const challengePool = () => CHALLENGES.filter(c => !state.challenge.done.includes(c.id)).map(c => c.id);
+function ensureOffers() {
+  const pool = challengePool();
+  let offers = state.challenge.offers.filter(id => pool.includes(id));
+  if (chal() && pool.includes(chal()) && !offers.includes(chal())) offers.unshift(chal());
+  offers = offers.slice(0, Math.max(OFFER_COUNT, chal() ? OFFER_COUNT : 0));
+  if (offers.length < OFFER_COUNT) {
+    const rest = shuffle(pool.filter(id => !offers.includes(id)));
+    while (offers.length < OFFER_COUNT && rest.length) offers.push(rest.pop());
+  }
+  const same = offers.length === state.challenge.offers.length && offers.every((id, i) => id === state.challenge.offers[i]);
+  if (!same) state.challenge.offers = offers;
+}
+const rerollCost = () => Math.max(1000, Math.ceil(rebirthReq() * 0.25));
+function rerollOffers() {
+  if (chal()) return toast("Finish or abandon your active challenge before rerolling.");
+  const pool = challengePool();
+  if (pool.length <= OFFER_COUNT) return toast("Every remaining challenge is already on offer.");
+  const price = rerollCost();
+  if (state.energy < price) return toast("You need " + fmt(price) + " energy to reroll.");
+  const current = state.challenge.offers.filter(id => pool.includes(id));
+  const unseen = shuffle(pool.filter(id => !current.includes(id)));
+  let next = unseen.slice(0, OFFER_COUNT);
+  if (next.length < OFFER_COUNT) next = next.concat(shuffle(current).slice(0, OFFER_COUNT - next.length));
+  state.energy -= price; state.challenge.offers = next; state.challenge.rerolls++;
+  ui(); save(); toast("Challenge offers rerolled.");
+}
 function startChallenge(c) {
+  if (!state.challenge.offers.includes(c.id)) return;
   confirmBox('Start "' + c.name + '"? This resets energy, upgrades, rebirths and the rebirth shop. Ascension bonuses stay.', () => {
     resetRun(); state.challenge.active = c.id; ui(); save(); toast("Challenge started: " + c.name);
   });
@@ -880,13 +1045,14 @@ function startChallenge(c) {
 function completeChallenge(c) {
   if (state.challenge.active !== c.id || state.rebirths < ascendReq()) return;
   if (!state.challenge.done.includes(c.id)) state.challenge.done.push(c.id);
-  state.challenge.active = null; resetRun(); checkAch(); ui(); save(); toast("Challenge complete: " + c.name + "!");
+  state.challenge.active = null; resetRun(); ensureOffers(); checkAch(); ui(); save(); toast("Challenge complete: " + c.name + "!");
 }
 function abandonChallenge() {
   confirmBox("Abandon the challenge? Your run resets and no reward is given.", () => {
     state.challenge.active = null; resetRun(); ui(); save();
   });
 }
+
 function startBoost(mult, secs, quiet) {
   const until = Date.now() + secs * 1000;
   if (boostActive() && state.boost.mult > mult) return false;
@@ -917,6 +1083,229 @@ function checkAch() {
   let changed = false;
   for (const a of ACH) if (!state.achieved.includes(a.id) && a.test(state)) { state.achieved.push(a.id); toast("Milestone unlocked: " + a.name); changed = true; }
   if (changed) renderAch();
+}
+
+/* ---------- casino ---------- */
+function parseAmount(raw) {
+  const t = String(raw || "").trim().replace(/,/g, "").replace(/\s+/g, "");
+  if (!t) return NaN;
+  if (/^(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(t)) return Number(t);
+  const m = /^(\d+\.?\d*|\.\d+)([a-z]{1,2})$/i.exec(t);
+  if (m) {
+    const i = UNITS.findIndex(u => u.toLowerCase() === m[2].toLowerCase());
+    if (i >= 0) return Number(m[1]) * Math.pow(1000, i + 1);
+  }
+  return NaN;
+}
+const fmtCur = (key, n) => CURRENCIES[key].int ? Math.floor(n).toLocaleString() : fmt(n);
+function setWagerPct(p) {
+  const cur = CURRENCIES[gambleUI.cur], bal = state[cur.key];
+  let v = p >= 1 ? bal : bal * p;
+  v = Math.floor(v);
+  if (cur.int && bal >= 1) v = Math.max(1, v);
+  $("gAmount").value = String(v);
+}
+function gamble() {
+  const cur = CURRENCIES[gambleUI.cur], game = GAMES.find(g => g.id === gambleUI.game);
+  let w = parseAmount($("gAmount").value);
+  if (!Number.isFinite(w) || w <= 0) return toast("Enter an amount to wager.");
+  if (cur.int) w = Math.floor(w);
+  if (w < 1) return toast("The minimum wager is 1.");
+  const bal = state[cur.key];
+  if (w > bal) return toast("You don't have that much " + cur.name + ".");
+  if (w >= bal * 0.5) {
+    const pct = Math.round(w / bal * 100);
+    return confirmBox("Wager " + fmtCur(cur.key, w) + " " + cur.short + " (" + pct + "% of your balance) on " + game.name + "?", () => resolveBet(cur.key, game, w));
+  }
+  resolveBet(cur.key, game, w);
+}
+function resolveBet(curKey, game, w) {
+  const cur = CURRENCIES[curKey];
+  if (w > state[curKey]) return toast("Your balance changed. Try again.");
+  state[curKey] -= w;
+  const win = secureRandom() < game.chance;
+  let payout = 0;
+  if (win) { payout = cur.int ? Math.floor(w * game.mult) : w * game.mult; state[curKey] += payout; }
+  state.gamble.plays++;
+  if (win) { state.gamble.wins++; if (game.id === "jackpot") state.gamble.jackpots++; }
+  const text = win ? "Won +" + fmtCur(curKey, payout - w) + " " + cur.short : "Lost " + fmtCur(curKey, w) + " " + cur.short;
+  gambleUI.history.unshift({text, win, game:game.name});
+  gambleUI.history = gambleUI.history.slice(0, 10);
+  const r = $("gResult"); r.textContent = (win ? "🎉 " : "💨 ") + text; r.className = "gresult " + (win ? "win" : "lose");
+  renderGHistory(); checkAch(); ui(); save();
+}
+function renderGHistory() {
+  const root = $("gHistory"); root.innerHTML = "";
+  if (!gambleUI.history.length) { const p = el("p", "muted"); p.textContent = "No bets yet this session."; root.append(p); return; }
+  for (const h of gambleUI.history) {
+    const d = el("div", "codeitem"), a = el("span", h.win ? "win" : "lose"), b = el("span", "muted");
+    a.textContent = h.text; b.textContent = h.game; d.append(a, b); root.append(d);
+  }
+}
+
+/* ---------- online: username, leaderboard, recovery ---------- */
+const onlineOn = () => /^https:\/\/\S+$/i.test(SUPABASE_URL) && SUPABASE_ANON_KEY.length > 20;
+async function api(fn, args, timeoutMs) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), timeoutMs || 10000);
+  try {
+    const headers = {"Content-Type":"application/json", "apikey":SUPABASE_ANON_KEY};
+    if (SUPABASE_ANON_KEY.startsWith("eyJ")) headers.Authorization = "Bearer " + SUPABASE_ANON_KEY;
+    const res = await fetch(SUPABASE_URL.replace(/\/+$/, "") + "/rest/v1/rpc/" + fn, {method:"POST", headers, body:JSON.stringify(args || {}), signal:ctl.signal});
+    if (!res.ok) throw new Error("http " + res.status);
+    return await res.json();
+  } finally { clearTimeout(timer); }
+}
+const USERNAME_ERRORS = {
+  bad_username:"Usernames are 3 to 16 characters: letters, numbers and underscores.",
+  taken:"That username is already taken.",
+  reserved:"That username is reserved. Pick another.",
+  too_soon:"You can only change your username once every 24 hours.",
+  wrong_secret:"This Player ID is registered with a different key. Restore your recovery key first.",
+  bad_id:"Your Player ID looks invalid. Try restoring your recovery key.",
+  bad_secret:"Your Player secret looks invalid. Try restoring your recovery key."
+};
+const profile = {state:"unknown", username:store.get(USERNAME_KEY) || ""};
+let lastSubmitAt = 0, lastSubmitSig = "", lastSubmitOk = 0, submitting = false;
+let lbBoard = "ascensions", lbOpenedAt = 0;
+const lbCache = {};
+const LB_BOARDS = [{id:"ascensions", label:"Ascensions"}, {id:"rebirths", label:"Total rebirths"}, {id:"challenges", label:"Challenges"}];
+
+function setUsernameMsg(msg, bad) { const e = $("usernameMsg"); e.textContent = msg; e.style.color = bad ? "var(--red)" : ""; }
+function renderProfile() {
+  const on = onlineOn();
+  $("lbSetup").hidden = on;
+  $("lbConn").textContent = !on ? "Server: not connected" : profile.state === "offline" ? "Server: unreachable" : "Server: connected";
+  $("lbName").textContent = profile.username || "Not set";
+  $("usernameBtn").disabled = !on;
+  let info;
+  if (!on) info = "Online features are off until the Supabase details are added.";
+  else if (state.tainted) info = "Leaderboard submissions are off for this save because owner tools were used.";
+  else if (ownerMultiplier !== 1) info = "Leaderboard submissions are paused while the owner multiplier is active.";
+  else if (profile.state === "mismatch") info = "This Player ID is registered with a different key. Restore your recovery key below.";
+  else if (!profile.username) info = "Set a username to appear on the leaderboards.";
+  else if (lastSubmitOk) info = "Score synced " + ago(lastSubmitOk) + ".";
+  else info = "Your score will sync shortly.";
+  $("lbSubmitInfo").textContent = info;
+}
+async function refreshProfile() {
+  if (!onlineOn()) { renderProfile(); return; }
+  try {
+    const r = await api("player_status", {p_player_id:PLAYER_ID, p_secret:PLAYER_SECRET});
+    if (!r || !r.registered) { profile.state = "unregistered"; }
+    else if (!r.verified) { profile.state = "mismatch"; }
+    else { profile.state = "ok"; profile.username = r.username || ""; store.set(USERNAME_KEY, profile.username); }
+  } catch (e) { profile.state = "offline"; }
+  renderProfile();
+}
+async function claimUsername() {
+  const name = $("usernameInput").value.trim();
+  if (!USERNAME_RE.test(name)) return setUsernameMsg(USERNAME_ERRORS.bad_username, true);
+  if (!onlineOn()) return setUsernameMsg("The leaderboard server isn't connected yet.", true);
+  $("usernameBtn").disabled = true;
+  try {
+    const r = await api("set_username", {p_player_id:PLAYER_ID, p_secret:PLAYER_SECRET, p_username:name});
+    if (r && r.ok) {
+      profile.username = r.username; profile.state = "ok"; store.set(USERNAME_KEY, r.username);
+      $("usernameInput").value = "";
+      setUsernameMsg("Username set to " + r.username + ".", false);
+      lastSubmitSig = ""; lastSubmitAt = 0; submitScore(true);
+      Object.keys(lbCache).forEach(k => delete lbCache[k]);
+    } else {
+      if (r && r.error === "wrong_secret") profile.state = "mismatch";
+      setUsernameMsg(USERNAME_ERRORS[r && r.error] || "Couldn't set that username.", true);
+    }
+  } catch (e) { setUsernameMsg("Couldn't reach the server. Try again in a moment.", true); }
+  renderProfile();
+}
+const scoreSig = () => state.ascensions + "|" + state.totalRebirths + "|" + state.challenge.done.length;
+function canSubmit() {
+  return onlineOn() && !!profile.username && profile.state !== "mismatch" && profile.state !== "unregistered" && !state.tainted && ownerMultiplier === 1 && !conflict;
+}
+async function submitScore(force) {
+  if (!canSubmit() || submitting) return;
+  const sig = scoreSig(), now = Date.now();
+  if (!force && sig === lastSubmitSig) return;
+  if (now - lastSubmitAt < 20000) return;
+  submitting = true; lastSubmitAt = now;
+  try {
+    const r = await api("submit_score", {p_player_id:PLAYER_ID, p_secret:PLAYER_SECRET, p_ascensions:state.ascensions, p_total_rebirths:state.totalRebirths, p_challenges:state.challenge.done.length});
+    if (r && r.ok) { lastSubmitSig = sig; lastSubmitOk = Date.now(); }
+    else if (r && r.error === "wrong_secret") profile.state = "mismatch";
+    else if (r && r.error === "bad_values") { lastSubmitSig = sig; }
+  } catch (e) { /* try again on the next check */ }
+  submitting = false; renderProfile();
+}
+async function loadBoard(force) {
+  const board = lbBoard;
+  if (!onlineOn()) { renderBoard(); return; }
+  const c = lbCache[board];
+  if (!force && c && Date.now() - c.t < 30000) { renderBoard(); return; }
+  $("lbMeta").textContent = "Loading…";
+  try {
+    const rows = await api("get_leaderboard", {p_board:board, p_limit:50, p_player_id:PLAYER_ID});
+    lbCache[board] = {t:Date.now(), rows:Array.isArray(rows) ? rows : []};
+  } catch (e) {
+    if (board === lbBoard) $("lbMeta").textContent = "Couldn't load the leaderboard. Try Refresh.";
+    return;
+  }
+  if (board === lbBoard) renderBoard();
+}
+function renderBoard() {
+  const root = $("lbList"); root.innerHTML = "";
+  document.querySelectorAll("#lbBoards button").forEach(b => b.classList.toggle("on", b.dataset.board === lbBoard));
+  if (!onlineOn()) { $("lbMeta").textContent = "Connect the server to see rankings."; return; }
+  const c = lbCache[lbBoard];
+  if (!c) return;
+  if (!c.rows.length) { const p = el("p", "muted"); p.textContent = "No ranked players yet. Be the first!"; root.append(p); }
+  for (const row of c.rows) {
+    const d = el("div", "lbrow" + (row.is_you ? " you" : "")), a = el("span", "rk"), b = el("span", "nm"), v = el("span", "vl");
+    a.textContent = "#" + row.rank; b.textContent = row.username + (row.is_you ? " (you)" : ""); v.textContent = Number(row.value).toLocaleString();
+    d.append(a, b, v); root.append(d);
+  }
+  $("lbMeta").textContent = "Top " + c.rows.length + " · updated " + ago(c.t);
+}
+function onLeaderboardOpen() { lbOpenedAt = Date.now(); refreshProfile(); loadBoard(false); }
+
+function makeRecoveryKey() {
+  const json = JSON.stringify({id:PLAYER_ID, secret:PLAYER_SECRET});
+  return "ELKEY:" + hash(json) + ":" + btoa(json);
+}
+function parseRecoveryKey(text) {
+  const t = String(text || "").replace(/\s+/g, "");
+  const m = /^ELKEY:([0-9a-f]{8}):([A-Za-z0-9+/=]+)$/.exec(t);
+  if (!m) return null;
+  let json; try { json = atob(m[2]); } catch (e) { return null; }
+  if (hash(json) !== m[1]) return null;
+  try {
+    const o = JSON.parse(json);
+    if (o && typeof o.id === "string" && ID_RE.test(o.id) && typeof o.secret === "string" && /^[0-9a-f]{64}$/.test(o.secret)) return o;
+  } catch (e) {}
+  return null;
+}
+function applyIdentity(id, secret) {
+  PLAYER_ID = id; PLAYER_SECRET = secret; IS_OWNER = PLAYER_ID === OWNER_PLAYER_ID;
+  store.set(PLAYER_ID_KEY, id); store.set(PLAYER_SECRET_KEY, secret);
+  profile.state = "unknown"; profile.username = ""; store.remove(USERNAME_KEY);
+  lastSubmitSig = ""; lastSubmitAt = 0; lastSubmitOk = 0;
+  Object.keys(lbCache).forEach(k => delete lbCache[k]);
+  refreshIdentityUI();
+  if (!IS_OWNER && !$("tab-owner").hidden) navBtns.core.click();
+  refreshProfile(); loadBoard(true);
+}
+async function restoreIdentity() {
+  const o = parseRecoveryKey($("keyText").value);
+  if (!o) return toast("That isn't a valid recovery key.");
+  if (o.id === PLAYER_ID && o.secret === PLAYER_SECRET) return toast("That's already this device's identity.");
+  if (onlineOn()) {
+    try {
+      const r = await api("player_status", {p_player_id:o.id, p_secret:o.secret});
+      if (!(r && r.registered && r.verified)) return toast("The server doesn't recognise that recovery key.");
+    } catch (e) { return toast("Couldn't reach the server to check that key."); }
+  }
+  confirmBox("Switch this device to the Player ID in that key? Your current Player ID will be replaced here.", () => {
+    applyIdentity(o.id, o.secret); $("keyText").value = ""; toast("Identity restored.");
+  });
 }
 
 /* ---------- build ui ---------- */
@@ -1004,19 +1393,54 @@ const chRefs = CHALLENGES.map(c => {
   complete.addEventListener("click", () => completeChallenge(c));
   abandon.addEventListener("click", abandonChallenge);
   acts.append(start, complete, abandon); card.append(info, acts); $("chList").append(card);
-  return {c, st, fill, start, complete, abandon};
+  return {c, card, st, fill, start, complete, abandon};
+});
+const doneRefs = CHALLENGES.map(c => {
+  const row = el("div", "statrow"), a = el("span"), b = el("span");
+  a.textContent = "✓ " + c.name; b.textContent = c.rewardText; row.append(a, b); $("chDone").append(row);
+  return {c, row};
 });
 const statRefs = STATS.map(([label, fn]) => {
   const row = el("div", "statrow"), a = el("span"), b = el("span"); a.textContent = label; row.append(a, b); $("statList").append(row);
   return {fn, b};
 });
-$("playerIdValue").textContent = PLAYER_ID;
-$("ownerBadge").hidden = !IS_OWNER;
-$("ownerPanel").hidden = !IS_OWNER;
-$("ownerMultiplierRange").value = ownerMultiplier;
-$("ownerMultiplierValue").textContent = ownerMultiplier.toFixed(1) + "x";
-$("ownerStatus").textContent = "Production multiplier is currently " + ownerMultiplier.toFixed(1) + "x.";
 const navBtns = {}; document.querySelectorAll("#nav button").forEach(b => { navBtns[b.dataset.tab] = b; });
+
+/* casino ui */
+const gCurBtns = {}, gGameBtns = {};
+(function buildCasino() {
+  for (const id of Object.keys(CURRENCIES)) {
+    const b = el("button"); b.textContent = CURRENCIES[id].name;
+    b.addEventListener("click", () => { gambleUI.cur = id; $("gAmount").value = ""; ui(); });
+    $("gCurBar").append(b); gCurBtns[id] = b;
+  }
+  for (const g of GAMES) {
+    const b = el("button", "gamebtn"); b.innerHTML = "<b></b><small></small>";
+    b.firstChild.textContent = g.name;
+    b.lastChild.textContent = (Math.round(g.chance * 1000) / 10) + "% chance · pays x" + g.mult;
+    b.addEventListener("click", () => { gambleUI.game = g.id; ui(); });
+    $("gGames").append(b); gGameBtns[g.id] = b;
+  }
+  for (const [label, p] of [["1%", 0.01], ["10%", 0.1], ["25%", 0.25], ["50%", 0.5], ["Max", 1]]) {
+    const b = el("button"); b.textContent = label; b.addEventListener("click", () => setWagerPct(p)); $("gPct").append(b);
+  }
+  renderGHistory();
+})();
+for (const b of LB_BOARDS) {
+  const btn = el("button"); btn.textContent = b.label; btn.dataset.board = b.id;
+  btn.addEventListener("click", () => { lbBoard = b.id; renderBoard(); loadBoard(false); });
+  $("lbBoards").append(btn);
+}
+
+function refreshIdentityUI() {
+  $("playerIdValue").textContent = PLAYER_ID;
+  $("ownerBadge").hidden = !IS_OWNER;
+  $("ownerPanel").hidden = !IS_OWNER;
+  navBtns.owner.hidden = !IS_OWNER;
+  $("ownerMultiplierRange").value = ownerMultiplier;
+  $("ownerMultiplierValue").textContent = ownerMultiplier.toFixed(1) + "x";
+  $("ownerStatus").textContent = "Production multiplier is currently " + ownerMultiplier.toFixed(1) + "x.";
+}
 
 function renderAch() {
   const root = $("achievements"); root.innerHTML = "";
@@ -1044,7 +1468,7 @@ function ui() {
   $("cps").textContent = cpsNow();
   $("mults").textContent = "Rebirth x" + rebirthMult().toFixed(2) + " · Ascension x" + ascMult().toFixed(2) + " · Challenges x" + (chalMult("click") === chalMult("rate") ? chalMult("click").toFixed(2) : chalMult("click").toFixed(2) + "/" + chalMult("rate").toFixed(2)) + (chal() ? " · IN CHALLENGE: " + CHALLENGES.find(c => c.id === chal()).name : "");
   const b = $("boost");
-  if (boostActive()) { b.hidden = false; b.textContent = "⚡ ENERGY BOOST x" + state.boost.mult + " · " + Math.ceil((state.boost.until - now) / 1000) + "s"; } else b.hidden = true;
+  if (boostActive()) { b.hidden = false; b.textContent = "⚡ ENERGY BOOST x" + state.boost.mult + " · " + Math.ceil((state.boost.until - now) / 1000) + "s" + (chal() === "dry" ? " (no effect in this challenge)" : ""); } else b.hidden = true;
 
   let owned = 0;
   for (const r of upRefs) {
@@ -1086,16 +1510,34 @@ function ui() {
   $("ascLock").hidden = state.ascensions > 0; $("ascShopWrap").hidden = state.ascensions < 1;
   updateShop(rRefs); updateShop(aRefs);
 
-  $("chLock").hidden = state.ascensions > 0; $("chList").hidden = state.ascensions < 1; $("chIntro").hidden = state.ascensions < 1;
+  const chUnlocked = state.ascensions > 0;
+  $("chLock").hidden = chUnlocked; $("chBody").hidden = !chUnlocked;
+  if (chUnlocked) ensureOffers();
   $("chCount").textContent = state.challenge.done.length + " / " + CHALLENGES.length + " done";
   for (const r of chRefs) {
-    const done = state.challenge.done.includes(r.c.id), active = chal() === r.c.id;
-    r.st.textContent = done ? "✓ Completed" : active ? "In progress · " + state.rebirths + "/" + ascendReq() + " rebirths" : "Not completed";
-    r.fill.style.width = active ? Math.min(100, state.rebirths / ascendReq() * 100) + "%" : done ? "100%" : "0%";
+    const done = state.challenge.done.includes(r.c.id), active = chal() === r.c.id, offered = state.challenge.offers.includes(r.c.id);
+    r.card.hidden = done || !(offered || active);
+    r.st.textContent = active ? "In progress · " + state.rebirths + "/" + ascendReq() + " rebirths" : "Not completed";
+    r.fill.style.width = active ? Math.min(100, state.rebirths / ascendReq() * 100) + "%" : "0%";
     r.start.hidden = done || active || !!chal();
     r.complete.hidden = !active; r.complete.disabled = state.rebirths < ascendReq();
     r.abandon.hidden = !active;
   }
+  for (const r of doneRefs) r.row.hidden = !state.challenge.done.includes(r.c.id);
+  $("chDoneHead").hidden = state.challenge.done.length === 0;
+  const left = CHALLENGES.length - state.challenge.done.length, price = rerollCost();
+  $("chRerollBtn").textContent = "Reroll offers · " + fmt(price) + " energy";
+  $("chRerollBtn").disabled = !!chal() || left <= OFFER_COUNT || state.energy < price;
+  $("chRerollNote").textContent = chal() ? "Locked during a challenge." : left === 0 ? "Every challenge is complete!" : left <= OFFER_COUNT ? "All remaining challenges are on offer." : "Rerolls so far: " + state.challenge.rerolls;
+
+  const gc = CURRENCIES[gambleUI.cur];
+  $("gBalance").textContent = "Balance: " + fmtCur(gc.key, state[gc.key]) + " " + gc.short;
+  for (const id of Object.keys(gCurBtns)) gCurBtns[id].classList.toggle("on", id === gambleUI.cur);
+  for (const id of Object.keys(gGameBtns)) gGameBtns[id].classList.toggle("on", id === gambleUI.game);
+  const gg = GAMES.find(g => g.id === gambleUI.game);
+  $("gInfo").textContent = gg.name + ": " + (Math.round(gg.chance * 1000) / 10) + "% to win, pays x" + gg.mult + " (about " + Math.round(gg.chance * gg.mult * 100) + "% average return).";
+  $("gStats").textContent = state.gamble.wins + " won / " + state.gamble.plays + " played";
+
   for (const r of statRefs) r.b.textContent = r.fn(state);
 
   navBtns.rebirth.classList.toggle("ping", canRebirth());
@@ -1115,20 +1557,8 @@ function ui() {
 
 /* ---------- events ---------- */
 $("orb").addEventListener("click", clickCore);
-$("copyPlayerIdBtn").addEventListener("click", async () => {
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(PLAYER_ID);
-      toast("Player ID copied.");
-    } else {
-      const temp = document.createElement("textarea");
-      temp.value = PLAYER_ID; document.body.appendChild(temp); temp.select();
-      const ok = document.execCommand("copy"); temp.remove();
-      toast(ok ? "Player ID copied." : "Clipboard unavailable. Select the Player ID and copy it manually.");
-    }
-  } catch (e) { toast("Clipboard unavailable. Select the Player ID and copy it manually."); }
-});
- function readOwnerAmount(id) {
+$("copyPlayerIdBtn").addEventListener("click", () => copyText(PLAYER_ID, "Player ID copied.", "keyText"));
+function readOwnerAmount(id) {
   const amount = Number($(id).value);
   if (!Number.isSafeInteger(amount) || amount < 1 || amount > 1000000) {
     toast("Enter a whole number from 1 to 1,000,000.");
@@ -1136,46 +1566,37 @@ $("copyPlayerIdBtn").addEventListener("click", async () => {
   }
   return amount;
 }
-
 $("addRebirthBtn").addEventListener("click", () => {
   if (!IS_OWNER) return;
   const amount = readOwnerAmount("addRebirthAmount");
   if (amount === null) return;
-
   const pointsPerRebirth = rpGain();
   state.rebirths += amount;
   state.totalRebirths += amount;
   state.rp += pointsPerRebirth * amount;
-
-  checkAch();
-  ui();
-  save();
-  toast("Added " + amount + " rebirth" + (amount === 1 ? "" : "s") +
-    " and " + pointsPerRebirth * amount + " RP.");
+  state.tainted = true;
+  checkAch(); ui(); save(); renderProfile();
+  toast("Added " + amount + " rebirth" + (amount === 1 ? "" : "s") + " and " + pointsPerRebirth * amount + " RP.");
 });
-
 $("addAscensionBtn").addEventListener("click", () => {
   if (!IS_OWNER) return;
   const amount = readOwnerAmount("addAscensionAmount");
   if (amount === null) return;
-
   const pointsPerAscension = apGain();
   state.ascensions += amount;
   state.ap += pointsPerAscension * amount;
-
-  checkAch();
-  ui();
-  save();
-  toast("Added " + amount + " ascension" + (amount === 1 ? "" : "s") +
-    " and " + pointsPerAscension * amount + " AP.");
+  state.tainted = true;
+  checkAch(); ui(); save(); renderProfile();
+  toast("Added " + amount + " ascension" + (amount === 1 ? "" : "s") + " and " + pointsPerAscension * amount + " AP.");
 });
 $("ownerMultiplierRange").addEventListener("input", e => {
   if (!IS_OWNER) return;
   ownerMultiplier = Math.max(1, Math.min(500, Math.round(Number(e.target.value) * 2) / 2));
   store.set(OWNER_SETTINGS_KEY, String(ownerMultiplier));
+  if (ownerMultiplier > 1) state.tainted = true;
   $("ownerMultiplierValue").textContent = ownerMultiplier.toFixed(1) + "x";
   $("ownerStatus").textContent = "Production multiplier is currently " + ownerMultiplier.toFixed(1) + "x.";
-  ui();
+  ui(); renderProfile();
 });
 $("ownerResetBtn").addEventListener("click", () => {
   if (!IS_OWNER) return;
@@ -1184,7 +1605,7 @@ $("ownerResetBtn").addEventListener("click", () => {
   $("ownerMultiplierRange").value = "1";
   $("ownerMultiplierValue").textContent = "1.0x";
   $("ownerStatus").textContent = "Production multiplier is currently 1.0x.";
-  ui();
+  ui(); renderProfile();
   toast("Owner settings reset.");
 });
 document.querySelectorAll(".js-rebirth").forEach(b => b.addEventListener("click", () => doRebirth(false)));
@@ -1195,7 +1616,16 @@ document.querySelectorAll(".js-ascend").forEach(b => b.addEventListener("click",
 document.querySelectorAll("#nav button").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll("#nav button").forEach(x => x.classList.toggle("on", x === b));
   document.querySelectorAll("section[id^=tab-]").forEach(t => t.hidden = t.id !== "tab-" + b.dataset.tab);
+  if (b.dataset.tab === "leaderboard") onLeaderboardOpen();
 }));
+$("chRerollBtn").addEventListener("click", rerollOffers);
+$("gBetBtn").addEventListener("click", gamble);
+$("gAmount").addEventListener("keydown", e => { if (e.key === "Enter") gamble(); });
+$("usernameBtn").addEventListener("click", claimUsername);
+$("usernameInput").addEventListener("keydown", e => { if (e.key === "Enter") claimUsername(); });
+$("lbRefresh").addEventListener("click", () => { refreshProfile(); loadBoard(true); });
+$("copyKeyBtn").addEventListener("click", () => copyText(makeRecoveryKey(), "Recovery key copied. Keep it somewhere safe.", "keyText"));
+$("restoreKeyBtn").addEventListener("click", restoreIdentity);
 $("autoUpC").addEventListener("change", e => { state.settings.autoUpgradeClick = e.target.checked; save(); });
 $("autoUpG").addEventListener("change", e => { state.settings.autoUpgradeGen = e.target.checked; save(); });
 $("autoRe").addEventListener("change", e => { state.settings.autoRebirth = e.target.checked; save(); });
@@ -1226,7 +1656,7 @@ $("saveBtn").addEventListener("click", () => {
   toast(save() ? "Game saved." : "Couldn't save here. Use Export save file or Copy save code.");
 });
 $("exportBtn").addEventListener("click", exportFile);
-$("copyBtn").addEventListener("click", () => { const c = makeCode(); $("saveText").value = c; copyText(c); });
+$("copyBtn").addEventListener("click", () => { const c = makeCode(); $("saveText").value = c; copyText(c, "Save code copied.", "saveText"); });
 $("importBtn").addEventListener("click", () => applyImport($("saveText").value));
 $("importFileBtn").addEventListener("click", () => $("importFile").click());
 $("importFile").addEventListener("change", e => {
@@ -1242,7 +1672,7 @@ $("resetBtn").addEventListener("click", () => confirmBox("Delete ALL your Energy
   for (const k of LEGACY_SAVE_KEYS) store.remove(k);
   conflict = false;
   // Player identity is stored separately and intentionally survives progress resets.
-  renderAch(); renderCodes(); ui(); save(); toast("Progress reset. Your Player ID was kept.");
+  renderAch(); renderCodes(); ui(); save(); renderProfile(); toast("Progress reset. Your Player ID was kept.");
 }));
 let chipUntil = 0;
 $("chipUse").addEventListener("click", () => { redeem($("chipCode").textContent, false); $("codeChip").hidden = true; chipUntil = 0; });
@@ -1260,8 +1690,10 @@ load();
 $("volume").value = Math.round(state.settings.volume * 100);
 $("storeMode").textContent = store.mode === "local" ? "Storage: browser" : store.mode === "session" ? "Storage: this tab only" : "Storage: unavailable (use Export)";
 $("storeWarn").hidden = store.mode === "local";
-renderAch(); renderCodes(); checkAch(); ui(); save();
-let lastT = Date.now(), lastAuto = 0, nextRoll = Date.now() + 60000, nextCode = Date.now() + rand(CODE_FIRST[0], CODE_FIRST[1]);
+refreshIdentityUI();
+renderAch(); renderCodes(); renderBoard(); checkAch(); ui(); save(); renderProfile();
+refreshProfile();
+let lastT = Date.now(), lastAuto = 0, lastOnlineCheck = 0, nextRoll = Date.now() + 60000, nextCode = Date.now() + rand(CODE_FIRST[0], CODE_FIRST[1]);
 function autoBuy() {
   const kinds = [];
   if (state.settings.autoUpgradeClick) kinds.push("click");
@@ -1270,7 +1702,7 @@ function autoBuy() {
   for (let i = 0; i < 30; i++) {
     let best = null, bp = Infinity;
     for (const u of upgrades) {
-      if (!kinds.includes(u.kind) || !canBuyType(u) || state.owned[u.id] >= UPGRADE_CAP) continue;
+      if (!kinds.includes(u.kind) || !canBuyType(u) || state.owned[u.id] >= upgradeCap()) continue;
       const p = cost(u); if (p <= state.energy && p < bp) { best = u; bp = p; }
     }
     if (!best) break;
@@ -1301,6 +1733,7 @@ setInterval(() => {
     else { $("chipCode").textContent = c.code; $("codeChip").hidden = false; chipUntil = now + 20000; }
   }
   if (chipUntil && now > chipUntil) { $("codeChip").hidden = true; chipUntil = 0; }
+  if (now - lastOnlineCheck >= 5000) { lastOnlineCheck = now; submitScore(false); renderProfile(); if (!$("tab-leaderboard").hidden) renderBoard(); }
   checkAch(); ui(); updateStatus();
 }, 250);
 setInterval(save, 10000);

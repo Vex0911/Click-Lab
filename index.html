@@ -109,7 +109,7 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 </head>
 <body>
 <div class="wrap">
- <div class="top"><div><div class="brand">ENERGY LAB // 5.0</div><div class="sub">Energy Lab V5 Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
+ <div class="top"><div><div class="brand">ENERGY LAB // 5.0</div><div class="sub">Energy Lab V5 Pre-Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
  <div class="warn" id="storeWarn" hidden>Saving isn't fully available in this embedded view, so progress may only last until you close the tab. Go to Settings and use Export save file or Copy save code to keep your progress.</div>
  <div class="boost" id="boost" hidden></div>
  <section class="stats">
@@ -363,9 +363,7 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 (() => {
 "use strict";
 
-/* ---------- online leaderboard config (Supabase) ----------
-   Paste your project URL and your public key (anon or publishable) here.
-   Leave both empty to play fully offline. */
+/* ---------- online leaderboard config (Supabase) ---------- */
 const SUPABASE_URL = "https://uxczlndiqsshfohzhcbx.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_qDOePGjwQKQo9y3rvNfi4Q_2snx7JLn";
 
@@ -388,7 +386,7 @@ function shuffle(arr) {
 }
 
 /* ---------- constants ---------- */
-const VERSION = "4.4";
+const VERSION = "5.0";
 const SAVE_SCHEMA = 4;
 const KEY = "energyLabSave40", BAK1 = "energyLabSave40b", BAK2 = "energyLabSave40c";
 const SKEY = "energyLabSound40";
@@ -402,7 +400,6 @@ const SELL_RETURN = 0.9;
 const UPGRADE_CAP = 5000;
 const OFFER_COUNT = 3;
 const CODE_FIRST = [240000, 480000], CODE_NEXT = [480000, 1200000]; // ms
-// Random boost: rolled once a minute, lasts 30s. p = chance per roll. 1.1x starts at 1%, higher = rarer.
 const BOOST_TIERS = [{m:1.1,p:0.01},{m:1.25,p:0.006},{m:1.5,p:0.0035},{m:1.75,p:0.002},{m:2,p:0.001},{m:2.5,p:0.0005}];
 const BOOST_SECS = 30;
 
@@ -459,7 +456,6 @@ const CHALLENGES = [
 ];
 
 const CODES = [
-  // energy: gives the larger of "min" or (energy per second x secs)
   {code:"HELLO",type:"energy",secs:30,min:100},
   {code:"SPARK",type:"energy",secs:60,min:250},
   {code:"VOLT",type:"energy",secs:120,min:500},
@@ -479,7 +475,6 @@ const CODES = [
   {code:"EXAWATT",type:"energy",secs:14400,min:600000},
   {code:"ZETTAWATT",type:"energy",secs:21600,min:1000000},
   {code:"V32",type:"energy",secs:900,min:20000},
-  // boosts (max x2.5)
   {code:"TURBO",type:"boost",mult:1.25,secs:180},
   {code:"NITRO",type:"boost",mult:1.5,secs:90},
   {code:"SURGE",type:"boost",mult:1.5,secs:120},
@@ -489,7 +484,6 @@ const CODES = [
   {code:"HYPER",type:"boost",mult:2,secs:120},
   {code:"LABRAT",type:"boost",mult:2,secs:120},
   {code:"MAXPOWER",type:"boost",mult:2.5,secs:45},
-  // rebirth points
   {code:"REBORN",type:"rp",amt:2},
   {code:"ENCORE",type:"rp",amt:3},
   {code:"PHOENIX",type:"rp",amt:3},
@@ -498,7 +492,6 @@ const CODES = [
   {code:"ENERGYLAB",type:"rp",amt:5},
   {code:"REGROWTH",type:"rp",amt:6},
   {code:"RENEWAL",type:"rp",amt:8},
-  // ascension points
   {code:"STARDUST",type:"ap",amt:1},
   {code:"COMET",type:"ap",amt:1},
   {code:"NEBULA",type:"ap",amt:2},
@@ -564,7 +557,6 @@ const STATS = [
   ["Milestones", s => s.achieved.length + " / " + ACH.length]
 ];
 
-/* ---------- casino definitions ---------- */
 const GAMES = [
   {id:"safe", name:"Safe Bet", chance:0.45, mult:2},
   {id:"risky", name:"Risky Bet", chance:0.18, mult:5},
@@ -577,7 +569,6 @@ const CURRENCIES = {
 };
 const gambleUI = {cur:"energy", game:"safe", history:[]};
 
-/* ---------- storage (works in embeds where localStorage is blocked) ---------- */
 const store = (() => {
   let mode = "memory", ls = null;
   const mem = {};
@@ -603,14 +594,12 @@ const store = (() => {
   };
 })();
 
-/* ---------- player identity ---------- */
 const ID_RE = /^EL-[0-9A-F]{8}(?:-[0-9A-F]{4}){3}-[0-9A-F]{12}$/;
 const USERNAME_RE = /^[A-Za-z0-9_]{3,16}$/;
 function generatePlayerId() {
   const bytes = new Uint8Array(16);
   if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(bytes);
   else for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
-  // UUID v4 layout: random identifier, not derived from the player's IP address.
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
   const h = Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
@@ -641,7 +630,6 @@ function readOwnerMultiplier() {
 }
 let ownerMultiplier = readOwnerMultiplier();
 
-/* ---------- state ---------- */
 const zero = list => Object.fromEntries(list.map(x => [x, 0]));
 const fresh = () => ({
   v:3, energy:0, lifetime:0, clicks:0,
@@ -658,7 +646,6 @@ let state = fresh();
 const bulk = {buy:{mode:"1", custom:1}, sell:{mode:"1", custom:1}};
 let clickTimes = [], customData = null, customAudio = null, ac = null;
 
-/* ---------- derived values ---------- */
 const chal = () => state.challenge.active;
 const rLvl = k => (chal() === "bare" || chal() === "fresh") ? 0 : state.rshop[k];
 const aLvl = k => (chal() === "bare" || chal() === "grounded") ? 0 : state.ashop[k];
@@ -688,7 +675,6 @@ function wantAmount(b, room, maxWord) {
   if (m === "custom") return Math.floor(Number(b.custom)) || 0;
   return Number(m);
 }
-// buy plan for an upgrade: how many, total cost, can we afford it
 function buyPlan(u) {
   const o = state.owned[u.id], room = upgradeCap() - o;
   if (room <= 0) return {n:0, total:0, afford:false, maxed:true};
@@ -727,7 +713,6 @@ const ascendReq = () => Math.ceil(10 * Math.pow(1.5, state.ascensions));
 const canAscend = () => !chal() && state.rebirths >= ascendReq();
 const apGain = () => Math.max(1, Math.floor(state.rebirths / 3));
 
-/* ---------- ui helpers ---------- */
 let toastTimer = null;
 function toast(msg) { $("toast").textContent = msg; $("toast").classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => $("toast").classList.remove("show"), 2600); }
 let modalYes = null;
@@ -735,7 +720,6 @@ function confirmBox(msg, yes) { $("modalMsg").textContent = msg; modalYes = yes;
 $("modalYes").addEventListener("click", () => { $("modal").hidden = true; const f = modalYes; modalYes = null; if (f) f(); });
 $("modalNo").addEventListener("click", () => { $("modal").hidden = true; modalYes = null; });
 
-/* ---------- sound ---------- */
 function beep() {
   try {
     const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
@@ -756,7 +740,6 @@ function setCustomSound(data) {
   $("soundNote").textContent = data ? "Using your custom MP3 click sound." : "Using the built-in blip. Custom sounds are MP3 only (max 1.5 MB). Since this is an HTML game, it might not work in every browser or embed.";
 }
 
-/* ---------- saving ---------- */
 let lastSaveAt = 0, saveFailed = false, conflict = false;
 function updateStatus() {
   const e = $("saveStatus");
@@ -781,7 +764,7 @@ function validEnv(raw) {
 }
 function rotateBackups(now) {
   const cur = store.get(KEY);
-  if (!cur || !validEnv(cur)) return; // never back up garbage
+  if (!cur || !validEnv(cur)) return;
   const b1 = store.get(BAK1);
   if (!b1 || now - envT(b1) > 120000) {
     const b2 = store.get(BAK2);
@@ -863,13 +846,12 @@ function load() {
   const earned = rate(true) * elapsed;
   if (earned > 0) { state.energy += earned; state.lifetime += earned; toast("Welcome back! +" + fmt(earned) + " offline energy."); }
   if (migrated) {
-    toast("V4 save system upgraded. Your existing progress was preserved.");
+    toast("V5 save system upgraded. Your existing progress was preserved.");
   } else if (from !== KEY) {
     toast("Main save was damaged. Restored from backup.");
   }
 }
 
-/* ---- export / import ---- */
 function hash(str) { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(16).padStart(8, "0"); }
 function makeCode() {
   state.last = Date.now();
@@ -924,7 +906,6 @@ function exportFile() {
   } catch (e) { toast("Downloads are blocked here. Copy the code from the box instead."); }
 }
 
-/* ---------- actions ---------- */
 function floatText(txt) {
   const w = $("orbwrap"); if (w.childElementCount > 12) return;
   const p = el("div", "pop"); p.textContent = "+" + txt; p.style.marginLeft = Math.round(rand(-60, 60)) + "px";
@@ -970,7 +951,6 @@ function doAscend() {
   checkAch(); ui(); save(); toast("Ascended! +" + gain + " Ascension Points.");
 }
 
-/* shop (rebirth + ascension) */
 function getLvl(it) { return it.unlock ? (state.unlocks[it.unlock] ? 1 : 0) : (state[it.store][it.id] || 0); }
 const shopCostAt = (it, level) => Math.ceil(it.base * Math.pow(it.growth || 1, level));
 function shopBuyPlan(it) {
@@ -1008,7 +988,6 @@ function sellShop(it) {
   ui(); save();
 }
 
-/* challenges: random offers + paid reroll */
 const challengePool = () => CHALLENGES.filter(c => !state.challenge.done.includes(c.id)).map(c => c.id);
 function ensureOffers() {
   const pool = challengePool();
@@ -1085,7 +1064,6 @@ function checkAch() {
   if (changed) renderAch();
 }
 
-/* ---------- casino ---------- */
 function parseAmount(raw) {
   const t = String(raw || "").trim().replace(/,/g, "").replace(/\s+/g, "");
   if (!t) return NaN;
@@ -1143,7 +1121,6 @@ function renderGHistory() {
   }
 }
 
-/* ---------- online: username, leaderboard, recovery ---------- */
 const onlineOn = () => /^https:\/\/\S+$/i.test(SUPABASE_URL) && SUPABASE_ANON_KEY.length > 20;
 async function api(fn, args, timeoutMs) {
   const ctl = new AbortController();
@@ -1169,7 +1146,14 @@ const profile = {state:"unknown", username:store.get(USERNAME_KEY) || ""};
 let lastSubmitAt = 0, lastSubmitSig = "", lastSubmitOk = 0, submitting = false;
 let lbBoard = "ascensions", lbOpenedAt = 0;
 const lbCache = {};
-const LB_BOARDS = [{id:"ascensions", label:"Ascensions"}, {id:"rebirths", label:"Total rebirths"}, {id:"challenges", label:"Challenges"}];
+
+// Added Lifetime Energy to leaderboard boards list
+const LB_BOARDS = [
+  {id:"ascensions", label:"Ascensions"}, 
+  {id:"rebirths", label:"Total rebirths"}, 
+  {id:"challenges", label:"Challenges"},
+  {id:"lifetime_energy", label:"Lifetime Energy"}
+];
 
 function setUsernameMsg(msg, bad) { const e = $("usernameMsg"); e.textContent = msg; e.style.color = bad ? "var(--red)" : ""; }
 function renderProfile() {
@@ -1218,7 +1202,9 @@ async function claimUsername() {
   } catch (e) { setUsernameMsg("Couldn't reach the server. Try again in a moment.", true); }
   renderProfile();
 }
-const scoreSig = () => state.ascensions + "|" + state.totalRebirths + "|" + state.challenge.done.length;
+
+// Track lifetime energy in signature
+const scoreSig = () => state.ascensions + "|" + state.totalRebirths + "|" + state.challenge.done.length + "|" + Math.floor(state.lifetime);
 function canSubmit() {
   return onlineOn() && !!profile.username && profile.state !== "mismatch" && profile.state !== "unregistered" && !state.tainted && ownerMultiplier === 1 && !conflict;
 }
@@ -1229,11 +1215,18 @@ async function submitScore(force) {
   if (now - lastSubmitAt < 20000) return;
   submitting = true; lastSubmitAt = now;
   try {
-    const r = await api("submit_score", {p_player_id:PLAYER_ID, p_secret:PLAYER_SECRET, p_ascensions:state.ascensions, p_total_rebirths:state.totalRebirths, p_challenges:state.challenge.done.length});
+    const r = await api("submit_score", {
+      p_player_id: PLAYER_ID, 
+      p_secret: PLAYER_SECRET, 
+      p_ascensions: state.ascensions, 
+      p_total_rebirths: state.totalRebirths, 
+      p_challenges: state.challenge.done.length,
+      p_lifetime_energy: state.lifetime
+    });
     if (r && r.ok) { lastSubmitSig = sig; lastSubmitOk = Date.now(); }
     else if (r && r.error === "wrong_secret") profile.state = "mismatch";
     else if (r && r.error === "bad_values") { lastSubmitSig = sig; }
-  } catch (e) { /* try again on the next check */ }
+  } catch (e) {}
   submitting = false; renderProfile();
 }
 async function loadBoard(force) {
@@ -1260,7 +1253,9 @@ function renderBoard() {
   if (!c.rows.length) { const p = el("p", "muted"); p.textContent = "No ranked players yet. Be the first!"; root.append(p); }
   for (const row of c.rows) {
     const d = el("div", "lbrow" + (row.is_you ? " you" : "")), a = el("span", "rk"), b = el("span", "nm"), v = el("span", "vl");
-    a.textContent = "#" + row.rank; b.textContent = row.username + (row.is_you ? " (you)" : ""); v.textContent = Number(row.value).toLocaleString();
+    a.textContent = "#" + row.rank; 
+    b.textContent = row.username + (row.is_you ? " (you)" : ""); 
+    v.textContent = (lbBoard === 'lifetime_energy') ? fmt(row.value) : Number(row.value).toLocaleString();
     d.append(a, b, v); root.append(d);
   }
   $("lbMeta").textContent = "Top " + c.rows.length + " · updated " + ago(c.t);
@@ -1308,7 +1303,6 @@ async function restoreIdentity() {
   });
 }
 
-/* ---------- build ui ---------- */
 function makeBar(kind) {
   const bar = el("div", "bulkbar " + kind);
   const lab = el("span", "muted"); lab.textContent = kind === "buy" ? "Buy:" : "Sell (-10%):"; bar.append(lab);
@@ -1406,7 +1400,6 @@ const statRefs = STATS.map(([label, fn]) => {
 });
 const navBtns = {}; document.querySelectorAll("#nav button").forEach(b => { navBtns[b.dataset.tab] = b; });
 
-/* casino ui */
 const gCurBtns = {}, gGameBtns = {};
 (function buildCasino() {
   for (const id of Object.keys(CURRENCIES)) {
@@ -1458,7 +1451,6 @@ function renderCodes() {
   $("codeCount").textContent = state.codes.length + " / " + CODES.length + " used";
 }
 
-/* ---------- ui update ---------- */
 function cpsNow() { const t = Date.now() - 1000; clickTimes = clickTimes.filter(x => x > t); return clickTimes.length; }
 function ui() {
   const now = Date.now();
@@ -1555,7 +1547,6 @@ function ui() {
   $("soundOn").checked = s.sound;
 }
 
-/* ---------- events ---------- */
 $("orb").addEventListener("click", clickCore);
 $("copyPlayerIdBtn").addEventListener("click", () => copyText(PLAYER_ID, "Player ID copied.", "keyText"));
 function readOwnerAmount(id) {
@@ -1671,7 +1662,6 @@ $("resetBtn").addEventListener("click", () => confirmBox("Delete ALL your Energy
   state = fresh(); store.remove(KEY); store.remove(BAK1); store.remove(BAK2);
   for (const k of LEGACY_SAVE_KEYS) store.remove(k);
   conflict = false;
-  // Player identity is stored separately and intentionally survives progress resets.
   renderAch(); renderCodes(); ui(); save(); renderProfile(); toast("Progress reset. Your Player ID was kept.");
 }));
 let chipUntil = 0;
@@ -1685,7 +1675,6 @@ window.addEventListener("storage", e => {
   } catch (err) {}
 });
 
-/* ---------- init + loop ---------- */
 load();
 $("volume").value = Math.round(state.settings.volume * 100);
 $("storeMode").textContent = store.mode === "local" ? "Storage: browser" : store.mode === "session" ? "Storage: this tab only" : "Storage: unavailable (use Export)";
@@ -1693,6 +1682,7 @@ $("storeWarn").hidden = store.mode === "local";
 refreshIdentityUI();
 renderAch(); renderCodes(); renderBoard(); checkAch(); ui(); save(); renderProfile();
 refreshProfile();
+
 let lastT = Date.now(), lastAuto = 0, lastOnlineCheck = 0, nextRoll = Date.now() + 60000, nextCode = Date.now() + rand(CODE_FIRST[0], CODE_FIRST[1]);
 function autoBuy() {
   const kinds = [];

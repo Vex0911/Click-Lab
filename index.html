@@ -109,7 +109,7 @@ details.pick summary{cursor:pointer;font-weight:700;font-size:13px}
 </head>
 <body>
 <div class="wrap">
- <div class="top"><div><div class="brand">ENERGY LAB // 5.2</div><div class="sub">Energy Lab V5.2 Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
+ <div class="top"><div><div class="brand">ENERGY LAB // 5.4</div><div class="sub">Energy Lab V5.4 Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
  <div class="warn" id="storeWarn" hidden>Saving isn't fully available in this embedded view, so progress may only last until you close the tab. Go to Settings and use Export save file or Copy save code to keep your progress.</div>
  <div class="boost" id="boost" hidden></div>
  <section class="stats">
@@ -128,6 +128,7 @@ details.pick summary{cursor:pointer;font-weight:700;font-size:13px}
   <button data-tab="codes">Codes</button>
   <button data-tab="leaderboard">Leaderboard</button>
   <button data-tab="stats">Stats</button>
+  <button data-tab="admin" id="adminNav" hidden>Test Lab / Owner</button>
   <button data-tab="settings">Settings</button>
  </nav>
 
@@ -168,7 +169,7 @@ details.pick summary{cursor:pointer;font-weight:700;font-size:13px}
     <div id="rebShopWrap">
      <div class="bulk-holder"></div>
      <div class="card-list" id="rebShop"></div>
-     <p class="muted" style="margin-top:10px">Shop levels can be sold back for 90% of what you paid.</p>
+     <p class="muted" style="margin-top:10px">Shop levels can be sold back for 90% of what you paid. Pulse Accelerator shortens the time between automatic Energy payouts.</p>
     </div>
    </section>
   </div>
@@ -282,6 +283,36 @@ details.pick summary{cursor:pointer;font-weight:700;font-size:13px}
   </section>
  </section>
 
+ <section id="tab-admin" hidden>
+  <section class="panel" id="testLabPanel" hidden>
+   <div class="panel-head"><h2>TestAcc Lab</h2><span class="owner-badge">TEST ACCOUNT</span></div>
+   <p class="muted">Testing-only upgrades. These bonuses apply only while using the authorized TestAcc Player ID.</p>
+   <div class="upgrade">
+    <div><h3 id="testReactorTitle">Test Reactor · Lv 0/5</h3><p id="testReactorDesc">Double click power and Energy/sec per level.</p></div>
+    <button class="buy primary" id="testReactorBuy"><b>Upgrade</b><small>1B energy</small></button>
+   </div>
+   <div class="controls" style="justify-content:flex-start">
+    <button id="testEnergyBtn">Grant 1T Energy</button>
+    <button id="testRPBtn">Grant 100K RP</button>
+    <button id="testAPBtn">Grant 100K AP</button>
+    <button id="testMaxBtn">Max normal upgrades</button>
+   </div>
+   <p class="notice" id="testLabStatus"></p>
+  </section>
+  <section class="panel" id="ownerBoostPanel" hidden style="margin-top:14px">
+   <div class="panel-head"><h2>Server-wide Boost Control</h2><span class="owner-badge">OWNER</span></div>
+   <p class="muted">These boosts affect every player connected to this Energy Lab server, including production and click power. They are stored in Supabase and expire automatically.</p>
+   <div class="statrow"><span>Current server boost</span><strong id="serverBoostStatus">Checking server…</strong></div>
+   <div class="controls" style="justify-content:flex-start">
+    <button class="primary server-boost-btn" data-mult="2" data-seconds="300">×2 · 5 min</button>
+    <button class="primary server-boost-btn" data-mult="5" data-seconds="900">×5 · 15 min</button>
+    <button class="primary server-boost-btn" data-mult="10" data-seconds="3600">×10 · 1 hour</button>
+    <button class="danger" id="serverBoostClear">End boost</button>
+   </div>
+   <p class="notice" id="serverBoostMsg">Server status will refresh automatically.</p>
+  </section>
+ </section>
+
  <section id="tab-settings" hidden>
   <div class="grid2">
    <section class="panel">
@@ -365,7 +396,7 @@ function shuffle(arr) {
 }
 
 /* ---------- constants ---------- */
-const VERSION = "5.2";
+const VERSION = "5.4";
 const SAVE_SCHEMA = 4;
 const KEY = "energyLabSave40", BAK1 = "energyLabSave40b", BAK2 = "energyLabSave40c";
 const SKEY = "energyLabSound40";
@@ -487,6 +518,7 @@ const CODES = [
 const rItems = [
   {id:"overcharge",store:"rshop",cur:"rp",name:"Overcharge",base:1,growth:1.5,max:50,desc:l=>"+10% click power per level · now +"+l*10+"%"},
   {id:"generator",store:"rshop",cur:"rp",name:"Generator Tuning",base:1,growth:1.5,max:50,desc:l=>"+10% energy/sec per level · now +"+l*10+"%"},
+  {id:"pulse",store:"rshop",cur:"rp",name:"Pulse Accelerator",base:4,growth:1.65,max:10,desc:l=>"-10% production interval per level · now every "+Math.round(1000*Math.pow(0.9,l))+" ms"},
   {id:"discount",store:"rshop",cur:"rp",name:"Bulk Pricing",base:2,growth:1.6,max:20,desc:l=>"-2% upgrade costs per level · now -"+l*2+"%"},
   {id:"headstart",store:"rshop",cur:"rp",name:"Head Start",base:3,growth:1.8,max:10,desc:l=>"Start each run with "+fmt(l*l*1000)+" energy"},
   {id:"autoUp",unlock:"autoUpgrade",cur:"rp",name:"Auto-Upgrade",base:6,max:1,desc:()=>"Unlocks Auto-Upgrade for Clicks and Generators (kept through ascension)"},
@@ -605,13 +637,15 @@ function getPlayerSecret() {
 let PLAYER_ID = getPlayerId();
 let PLAYER_SECRET = getPlayerSecret();
 const OWNER_PLAYER_ID = "EL-13B6729B-7DF0-4369-A078-FAA9831EA890";
+const TESTACC_PLAYER_ID = "EL-06CC7F1E-0B48-4A28-85E5-FE70805620DB";
 let IS_OWNER = PLAYER_ID === OWNER_PLAYER_ID;
+let IS_TESTACC = PLAYER_ID === TESTACC_PLAYER_ID;
 
 const zero = list => Object.fromEntries(list.map(x => [x, 0]));
 const fresh = () => ({
-  v:3, energy:0, lifetime:0, clicks:0,
+  v:3, energy:0, lifetime:0, clicks:0, testLevels:0,
   owned: zero(upgrades.map(u => u.id)),
-  rebirths:0, totalRebirths:0, rp:0, rshop: zero(["overcharge","generator","discount","headstart"]),
+  rebirths:0, totalRebirths:0, rp:0, rshop: zero(["overcharge","generator","discount","headstart","pulse"]),
   ascensions:0, ap:0, ashop: zero(["core","overdrive","efficient"]),
   unlocks:{autoUpgrade:false, autoRebirth:false, autoClaim:false, autoAscend:false},
   settings:{autoUpgradeClick:false, autoUpgradeGen:false, autoPick:Object.fromEntries(upgrades.map(u => [u.id, true])), autoRebirth:false, autoAscend:false, autoClaim:false, noGambleConfirm:false, sound:false, volume:0.5},
@@ -627,7 +661,11 @@ const chal = () => state.challenge.active;
 const rLvl = k => (chal() === "bare" || chal() === "fresh") ? 0 : state.rshop[k];
 const aLvl = k => (chal() === "bare" || chal() === "grounded") ? 0 : state.ashop[k];
 const boostActive = () => Date.now() < state.boost.until;
-const boostMult = () => (boostActive() && chal() !== "dry") ? state.boost.mult : 1;
+let serverBoost = {multiplier:1, endsAt:0, active:false};
+const serverBoostActive = () => serverBoost.active && Date.now() < serverBoost.endsAt;
+const serverBoostMult = () => serverBoostActive() ? serverBoost.multiplier : 1;
+const testReactorMult = () => IS_TESTACC ? Math.pow(2, state.testLevels || 0) : 1;
+const boostMult = () => chal() === "dry" ? 1 : (boostActive() ? state.boost.mult : 1) * serverBoostMult();
 const upgradeCap = () => chal() === "lean" ? 100 : UPGRADE_CAP;
 const rebirthMult = () => 1 + 0.2 * state.rebirths;
 const ascMult = () => (1 + 0.5 * state.ascensions) * ascensionTierMultiplier() * (1 + 0.25 * aLvl("core"));
@@ -635,12 +673,12 @@ function chalMult(kind) { let m = 1; for (const c of CHALLENGES) if (state.chall
 function clickPower() {
   let base = 1;
   if (chal() !== "monk") for (const u of upgrades) if (u.kind === "click") base += u.amount * state.owned[u.id];
-  return base * rebirthMult() * ascMult() * boostMult() * chalMult("click") * (1 + 0.1 * rLvl("overcharge")) * (1 + 0.3 * aLvl("overdrive"));
+  return base * rebirthMult() * ascMult() * boostMult() * testReactorMult() * chalMult("click") * (1 + 0.1 * rLvl("overcharge")) * (1 + 0.3 * aLvl("overdrive"));
 }
 function rate(noBoost) {
   let base = 0;
   for (const u of upgrades) if (u.kind === "rate") base += u.amount * state.owned[u.id];
-  return base * rebirthMult() * ascMult() * (noBoost ? 1 : boostMult()) * chalMult("rate") * (1 + 0.1 * rLvl("generator"));
+  return base * rebirthMult() * ascMult() * (noBoost ? 1 : boostMult()) * testReactorMult() * chalMult("rate") * (1 + 0.1 * rLvl("generator"));
 }
 const discount = () => Math.min(0.4, 0.02 * rLvl("discount"));
 const cost = (u, level) => Math.ceil(u.base * Math.pow(u.growth, level === undefined ? state.owned[u.id] : level) * (1 - discount()) * (chal() === "pricey" ? 2 : 1));
@@ -683,6 +721,7 @@ function currentAscensionTier() {
   return tier;
 }
 const ascensionTierMultiplier = () => currentAscensionTier().multiplier;
+const productionIntervalMs = () => Math.max(250, Math.round(1000 * Math.pow(0.9, rLvl("pulse"))));
 const rebirthReq = () => Math.ceil(10000 * Math.pow(1.5, state.rebirths) * Math.pow(0.9, aLvl("efficient")) * (chal() === "heavy" ? 2 : 1));
 const canRebirth = () => state.energy >= rebirthReq();
 const rpGain = () => Math.max(1, Math.floor(1 + 2 * Math.log10(Math.max(1, state.energy / rebirthReq()))));
@@ -768,7 +807,7 @@ function sanitize(d) {
   const s = fresh();
   const num = (x, def, min) => { x = Number(x); return Number.isFinite(x) ? Math.max(min === undefined ? 0 : min, x) : def; };
   const int = (x, def, max) => Math.min(max === undefined ? Infinity : max, Math.floor(num(x, def)));
-  s.energy = num(d.energy, 0); s.lifetime = num(d.lifetime, 0); s.clicks = int(d.clicks, 0);
+  s.energy = num(d.energy, 0); s.lifetime = num(d.lifetime, 0); s.clicks = int(d.clicks, 0); s.testLevels = int(d.testLevels, 0, 5);
   for (const u of upgrades) s.owned[u.id] = int(d.owned && d.owned[u.id], 0, UPGRADE_CAP);
   s.rebirths = int(d.rebirths, 0); s.totalRebirths = int(d.totalRebirths, 0); s.rp = int(d.rp, 0);
   for (const it of rItems) if (it.store) s.rshop[it.id] = int(d.rshop && d.rshop[it.id], 0, it.max);
@@ -1123,6 +1162,9 @@ const USERNAME_ERRORS = {
   bad_username:"Usernames are 3 to 16 characters: letters, numbers and underscores.",
   taken:"That username is already taken.",
   reserved:"That username is reserved. Pick another.",
+  "reserved_username:owner":"That username contains a reserved Owner name. Pick another.",
+  "reserved_username:testacc":"That username contains a reserved TestAcc name. Pick another.",
+  "reserved_username:vex":"That username contains a reserved Vex name. Pick another.",
   too_soon:"You can only change your username once every 24 hours.",
   wrong_secret:"This Player ID is registered with a different key. Restore your recovery key first.",
   bad_id:"Your Player ID looks invalid. Try restoring your recovery key.",
@@ -1158,6 +1200,35 @@ function renderProfile() {
   else info = "Your score will sync shortly.";
   $("lbSubmitInfo").textContent = info;
 }
+async function refreshServerBoost() {
+  if (!onlineOn()) return;
+  try {
+    const r = await api("get_server_boost", {});
+    const ends = r && r.ends_at ? Date.parse(r.ends_at) : 0;
+    serverBoost = {multiplier:Number(r && r.multiplier) || 1, endsAt:Number.isFinite(ends) ? ends : 0, active:!!(r && r.active && ends > Date.now())};
+    if (IS_OWNER) $("serverBoostMsg").textContent = serverBoostActive() ? "Server boost is active for everyone." : "No server-wide boost is active.";
+  } catch (e) {
+    if (IS_OWNER) $("serverBoostMsg").textContent = "Couldn't read server boost: " + e.message;
+  }
+  ui();
+}
+async function setServerBoost(multiplier, seconds) {
+  if (!IS_OWNER || !onlineOn()) return;
+  document.querySelectorAll(".server-boost-btn").forEach(b => b.disabled = true);
+  $("serverBoostClear").disabled = true;
+  try {
+    const r = await api("set_server_boost", {p_player_id:PLAYER_ID, p_secret:PLAYER_SECRET, p_multiplier:multiplier, p_duration_seconds:seconds});
+    if (!r || !r.ok) throw new Error((r && r.error) || "The server rejected the boost.");
+    await refreshServerBoost();
+    $("serverBoostMsg").textContent = seconds ? "Server-wide ×" + multiplier + " boost activated." : "Server-wide boost ended.";
+  } catch (e) {
+    $("serverBoostMsg").textContent = "Boost failed: " + e.message;
+  } finally {
+    document.querySelectorAll(".server-boost-btn").forEach(b => b.disabled = false);
+    $("serverBoostClear").disabled = false;
+  }
+}
+
 async function refreshProfile() {
   if (!onlineOn()) { renderProfile(); return; }
   try {
@@ -1186,7 +1257,22 @@ async function claimUsername() {
       if (r && r.error === "wrong_secret") profile.state = "mismatch";
       setUsernameMsg(USERNAME_ERRORS[r && r.error] || "Couldn't set that username.", true);
     }
-  } catch (e) { setUsernameMsg("Couldn't reach the server. Try again in a moment.", true); }
+  } catch (e) {
+    const detail = String(e && e.message || "");
+    const reserved = /reserved_username:(owner|testacc|vex)/i.exec(detail);
+    if (reserved) {
+      const messages = {
+        owner: "That username contains a reserved Owner name. Pick another.",
+        testacc: "That username contains a reserved TestAcc name. Pick another.",
+        vex: "That username contains a reserved Vex name. Pick another."
+      };
+      setUsernameMsg(messages[reserved[1].toLowerCase()], true);
+    } else if (/duplicate key|players_username_lower_idx/i.test(detail)) {
+      setUsernameMsg(USERNAME_ERRORS.taken, true);
+    } else {
+      setUsernameMsg("Couldn't reach the server. Try again in a moment.", true);
+    }
+  }
   renderProfile();
 }
 
@@ -1278,7 +1364,7 @@ function parseRecoveryKey(text) {
   return null;
 }
 function applyIdentity(id, secret) {
-  PLAYER_ID = id; PLAYER_SECRET = secret; IS_OWNER = PLAYER_ID === OWNER_PLAYER_ID;
+  PLAYER_ID = id; PLAYER_SECRET = secret; IS_OWNER = PLAYER_ID === OWNER_PLAYER_ID; IS_TESTACC = PLAYER_ID === TESTACC_PLAYER_ID;
   store.set(PLAYER_ID_KEY, id); store.set(PLAYER_SECRET_KEY, secret);
   profile.state = "unknown"; profile.username = ""; store.remove(USERNAME_KEY);
   lastSubmitSig = ""; lastSubmitAt = 0; lastSubmitOk = 0;
@@ -1445,6 +1531,9 @@ for (const b of LB_BOARDS) {
 function refreshIdentityUI() {
   $("playerIdValue").textContent = PLAYER_ID;
   $("ownerBadge").hidden = !IS_OWNER;
+  $("adminNav").hidden = !(IS_OWNER || IS_TESTACC);
+  $("testLabPanel").hidden = !IS_TESTACC;
+  $("ownerBoostPanel").hidden = !IS_OWNER;
 }
 
 function renderAch() {
@@ -1471,8 +1560,17 @@ function ui() {
   $("power").textContent = fmt(clickPower());
   $("cps").textContent = cpsNow();
   $("mults").textContent = "Rebirth x" + rebirthMult().toFixed(2) + " · Ascension x" + ascMult().toFixed(2) + " · Challenges x" + (chalMult("click") === chalMult("rate") ? chalMult("click").toFixed(2) : chalMult("click").toFixed(2) + "/" + chalMult("rate").toFixed(2)) + (chal() ? " · IN CHALLENGE: " + CHALLENGES.find(c => c.id === chal()).name : "");
-  const b = $("boost");
-  if (boostActive()) { b.hidden = false; b.textContent = "⚡ ENERGY BOOST x" + state.boost.mult + " · " + Math.ceil((state.boost.until - now) / 1000) + "s" + (chal() === "dry" ? " (no effect in this challenge)" : ""); } else b.hidden = true;
+  const b = $("boost"), boostLines = [];
+  if (serverBoostActive()) boostLines.push("🌐 SERVER BOOST x" + serverBoost.multiplier + " · " + fmtTime(Math.ceil((serverBoost.endsAt - now) / 1000)) + " remaining");
+  if (boostActive()) boostLines.push("⚡ PERSONAL BOOST x" + state.boost.mult + " · " + fmtTime(Math.ceil((state.boost.until - now) / 1000)) + " remaining");
+  b.hidden = boostLines.length === 0; b.textContent = boostLines.join("  |  ");
+  if (IS_TESTACC) {
+    $("testReactorTitle").textContent = "Test Reactor · Lv " + state.testLevels + "/5";
+    $("testReactorDesc").textContent = "×" + testReactorMult() + " to click power and Energy/sec. Next level doubles it.";
+    $("testReactorBuy").disabled = state.testLevels >= 5 || state.energy < 1e9;
+    $("testReactorBuy").innerHTML = state.testLevels >= 5 ? "<b>MAX</b><small>fully upgraded</small>" : "<b>Upgrade</b><small>1B energy</small>";
+  }
+  if (IS_OWNER) $("serverBoostStatus").textContent = serverBoostActive() ? "×" + serverBoost.multiplier + " · " + fmtTime(Math.ceil((serverBoost.endsAt-now)/1000)) + " left" : "No active server boost";
 
   let owned = 0;
   for (const r of upRefs) {
@@ -1564,6 +1662,19 @@ function ui() {
   $("soundOn").checked = s.sound;
 }
 
+// Account-specific testing and server administration controls.
+$("testReactorBuy").addEventListener("click", () => {
+  if (!IS_TESTACC || state.testLevels >= 5 || state.energy < 1e9) return;
+  state.energy -= 1e9; state.testLevels++; ui(); save();
+  $("testLabStatus").textContent = "Test Reactor upgraded to level " + state.testLevels + ".";
+});
+$("testEnergyBtn").addEventListener("click", () => { if (!IS_TESTACC) return; state.energy += 1e12; state.lifetime += 1e12; ui(); save(); });
+$("testRPBtn").addEventListener("click", () => { if (!IS_TESTACC) return; state.rp += 100000; ui(); save(); });
+$("testAPBtn").addEventListener("click", () => { if (!IS_TESTACC) return; state.ap += 100000; ui(); save(); });
+$("testMaxBtn").addEventListener("click", () => { if (!IS_TESTACC) return; for (const u of upgrades) state.owned[u.id] = UPGRADE_CAP; ui(); save(); });
+document.querySelectorAll(".server-boost-btn").forEach(b => b.addEventListener("click", () => setServerBoost(Number(b.dataset.mult), Number(b.dataset.seconds))));
+$("serverBoostClear").addEventListener("click", () => setServerBoost(1, 0));
+
 $("orb").addEventListener("click", clickCore);
 $("copyPlayerIdBtn").addEventListener("click", () => copyText(PLAYER_ID, "Player ID copied.", "keyText"));
 document.querySelectorAll(".js-rebirth").forEach(b => b.addEventListener("click", () => doRebirth(false)));
@@ -1648,9 +1759,10 @@ $("storeMode").textContent = store.mode === "local" ? "Storage: browser" : store
 $("storeWarn").hidden = store.mode === "local";
 refreshIdentityUI();
 renderAch(); renderCodes(); renderBoard(); checkAch(); ui(); save(); renderProfile();
-refreshProfile();
+refreshIdentityUI();
+refreshProfile(); refreshServerBoost();
 
-let lastT = Date.now(), lastAuto = 0, lastOnlineCheck = 0, nextRoll = Date.now() + 60000, nextCode = Date.now() + rand(CODE_FIRST[0], CODE_FIRST[1]);
+let lastT = Date.now(), productionElapsedMs = 0, lastAuto = 0, lastOnlineCheck = 0, nextRoll = Date.now() + 60000, nextCode = Date.now() + rand(CODE_FIRST[0], CODE_FIRST[1]);
 function autoBuy() {
   const kinds = [];
   if (state.settings.autoUpgradeClick) kinds.push("click");
@@ -1672,10 +1784,22 @@ setInterval(() => {
   state.stats.playtime += Math.min(raw, 5);
   if (raw > 30) {
     const g = rate(true) * dt;
+    productionElapsedMs = 0;
     if (g > 0) { state.energy += g; state.lifetime += g; toast("Welcome back! +" + fmt(g) + " energy while you were away."); }
   } else {
-    const g = rate() * dt;
-    if (g > 0) { state.energy += g; state.lifetime += g; }
+    const currentRate = rate();
+    if (currentRate > 0) {
+      productionElapsedMs += raw * 1000;
+      let interval = productionIntervalMs();
+      while (productionElapsedMs >= interval) {
+        const g = rate() * interval / 1000;
+        if (g > 0) { state.energy += g; state.lifetime += g; }
+        productionElapsedMs -= interval;
+        interval = productionIntervalMs();
+      }
+    } else {
+      productionElapsedMs = 0;
+    }
   }
   if (state.unlocks.autoUpgrade && now - lastAuto >= 500) { lastAuto = now; autoBuy(); }
   if (state.unlocks.autoRebirth && state.settings.autoRebirth && canRebirth()) doRebirth(true);
@@ -1691,7 +1815,7 @@ setInterval(() => {
     else { $("chipCode").textContent = c.code; $("codeChip").hidden = false; chipUntil = now + 20000; }
   }
   if (chipUntil && now > chipUntil) { $("codeChip").hidden = true; chipUntil = 0; }
-  if (now - lastOnlineCheck >= 5000) { lastOnlineCheck = now; submitScore(false); renderProfile();
+  if (now - lastOnlineCheck >= 5000) { lastOnlineCheck = now; submitScore(false); renderProfile(); refreshServerBoost();
     if (!$("tab-leaderboard").hidden) {
       // keep the open leaderboard live: re-fetch every 15s while it is visible
       if (!document.hidden && now - lastBoardFetch >= 15000) loadBoard(true); else renderBoard();

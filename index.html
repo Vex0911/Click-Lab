@@ -118,7 +118,7 @@ body.gate-locked .wrap,body.gate-locked .codechip{visibility:hidden}
 </head>
 <body class="gate-locked">
 <div class="wrap">
- <div class="top"><div><div class="brand">ENERGY LAB // 5.6</div><div class="sub">Energy Lab V5.6 Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
+ <div class="top"><div><div class="brand">ENERGY LAB // 5.6</div><div class="sub">Energy Lab V5.5 Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
  <div class="warn" id="storeWarn" hidden>Saving isn't fully available in this embedded view, so progress may only last until you close the tab. Go to Settings and use Export save file or Copy save code to keep your progress.</div>
  <div class="boost" id="boost" hidden></div>
  <section class="stats">
@@ -256,11 +256,7 @@ body.gate-locked .wrap,body.gate-locked .codechip{visibility:hidden}
     <div class="panel-head"><h2>Your Profile</h2><span class="muted" id="lbConn"></span></div>
     <div class="warn" id="lbSetup" hidden>The leaderboard server isn't connected yet. Add your Supabase project URL and public key at the top of the script (see the setup notes). The rest of the game works without it.</div>
     <div class="statrow"><span>Username</span><span id="lbName">Not set</span></div>
-    <div class="row">
-     <input type="text" class="nocase" id="usernameInput" maxlength="16" placeholder="Choose a username" autocomplete="off">
-     <button class="primary" id="usernameBtn">Set username</button>
-    </div>
-    <p class="muted" id="usernameMsg">3 to 16 letters, numbers or underscores. You can change it once every 24 hours.</p>
+    <p class="muted">Usernames are locked. Only the owner can change them directly in the Supabase dashboard.</p>
     <p class="muted" id="lbSubmitInfo"></p>
 
    </section>
@@ -1264,17 +1260,6 @@ async function api(fn, args, timeoutMs) {
     return await res.json();
   } finally { clearTimeout(timer); }
 }
-const USERNAME_ERRORS = {
-  bad_username:"Usernames are 3 to 16 characters: letters, numbers and underscores.",
-  taken:"That username is already taken.",
-  reserved:"That username is reserved. Pick another.",
-  "reserved_username:owner":"That username contains a reserved Owner name. Pick another.",
-  "reserved_username:testacc":"That username contains a reserved TestAcc name. Pick another.",
-  "reserved_username:vex":"That username contains a reserved Vex name. Pick another.",
-  too_soon:"You can only change your username once every 24 hours.",
-  invalid_session:"Your login session expired. Log in again.",
-  unauthorized:"Your login session is invalid. Log in again."
-};
 const profile = {state:"unknown", username:""};
 let lastSubmitAt = 0, lastSubmitSig = "", lastSubmitOk = 0, lastSubmitLife = 0, lastSubmitPlay = 0, submitting = false, syncError = "";
 let lbBoard = "ascensions", lbOpenedAt = 0;
@@ -1289,18 +1274,16 @@ const LB_BOARDS = [
   {id:"playtime", label:"Playtime"}
 ];
 
-function setUsernameMsg(msg, bad) { const e = $("usernameMsg"); e.textContent = msg; e.style.color = bad ? "var(--red)" : ""; }
 function renderProfile() {
   const on = onlineOn();
   $("lbSetup").hidden = on;
   $("lbConn").textContent = !on ? "Server: not connected" : profile.state === "offline" ? "Server: unreachable" : "Server: connected";
   $("lbName").textContent = profile.username || "Not set";
-  $("usernameBtn").disabled = !on;
   let info;
   if (!on) info = "Online features are off until the Supabase details are added.";
   else if (profile.state === "mismatch") info = "This account could not be verified. Log in again.";
   else if (syncError) info = "Score sync failed (" + syncError + "). It will retry automatically.";
-  else if (!profile.username) info = "Set a username to appear on the leaderboards.";
+  else if (!profile.username) info = "This account does not have a username assigned yet. Contact the owner.";
   else if (lastSubmitOk) info = "Score synced " + ago(lastSubmitOk) + ".";
   else info = "Your score will sync shortly.";
   $("lbSubmitInfo").textContent = info;
@@ -1344,42 +1327,6 @@ async function refreshProfile() {
     else { profile.state = "ok"; profile.username = r.username || ""; store.set(USERNAME_KEY, profile.username); }
     syncError = "";
   } catch (e) { profile.state = "offline"; syncError = e.message; }
-  renderProfile();
-}
-async function claimUsername() {
-  if (!PLAYER_ID || !SESSION_TOKEN) return setUsernameMsg("Log in first.", true);
-  const name = $("usernameInput").value.trim();
-  if (!USERNAME_RE.test(name)) return setUsernameMsg(USERNAME_ERRORS.bad_username, true);
-  if (!onlineOn()) return setUsernameMsg("The leaderboard server isn't connected yet.", true);
-  $("usernameBtn").disabled = true;
-  try {
-    const r = await api("set_username", {p_username:name});
-    if (r && r.ok) {
-      profile.username = r.username; profile.state = "ok"; store.set(USERNAME_KEY, r.username);
-      $("usernameInput").value = "";
-      setUsernameMsg("Username set to " + r.username + ".", false);
-      lastSubmitSig = ""; lastSubmitAt = 0; submitScore(true);
-      Object.keys(lbCache).forEach(k => delete lbCache[k]);
-    } else {
-      if (r && r.error === "invalid_session") profile.state = "offline";
-      setUsernameMsg(USERNAME_ERRORS[r && r.error] || "Couldn't set that username.", true);
-    }
-  } catch (e) {
-    const detail = String(e && e.message || "");
-    const reserved = /reserved_username:(owner|testacc|vex)/i.exec(detail);
-    if (reserved) {
-      const messages = {
-        owner: "That username contains a reserved Owner name. Pick another.",
-        testacc: "That username contains a reserved TestAcc name. Pick another.",
-        vex: "That username contains a reserved Vex name. Pick another."
-      };
-      setUsernameMsg(messages[reserved[1].toLowerCase()], true);
-    } else if (/duplicate key|players_username_lower_idx/i.test(detail)) {
-      setUsernameMsg(USERNAME_ERRORS.taken, true);
-    } else {
-      setUsernameMsg("Couldn't reach the server. Try again in a moment.", true);
-    }
-  }
   renderProfile();
 }
 
@@ -1775,8 +1722,6 @@ document.querySelectorAll("#nav button").forEach(b => b.addEventListener("click"
 $("chRerollBtn").addEventListener("click", rerollOffers);
 $("gBetBtn").addEventListener("click", gamble);
 $("gAmount").addEventListener("keydown", e => { if (e.key === "Enter") gamble(); });
-$("usernameBtn").addEventListener("click", claimUsername);
-$("usernameInput").addEventListener("keydown", e => { if (e.key === "Enter") claimUsername(); });
 $("lbRefresh").addEventListener("click", async () => { await submitScore(true); refreshProfile(); loadBoard(true); });
 $("logoutBtn").addEventListener("click", logout);
 $("autoUpC").addEventListener("change", e => { state.settings.autoUpgradeClick = e.target.checked; save(); });

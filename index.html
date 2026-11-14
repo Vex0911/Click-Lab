@@ -118,7 +118,7 @@ body.gate-locked .wrap,body.gate-locked .codechip{visibility:hidden}
 </head>
 <body class="gate-locked">
 <div class="wrap">
- <div class="top"><div><div class="brand">ENERGY LAB // 5.5</div><div class="sub">Energy Lab V5.5 Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
+ <div class="top"><div><div class="brand">ENERGY LAB // 5.6</div><div class="sub">Energy Lab V5.5 Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
  <div class="warn" id="storeWarn" hidden>Saving isn't fully available in this embedded view, so progress may only last until you close the tab. Go to Settings and use Export save file or Copy save code to keep your progress.</div>
  <div class="boost" id="boost" hidden></div>
  <section class="stats">
@@ -262,11 +262,7 @@ body.gate-locked .wrap,body.gate-locked .codechip{visibility:hidden}
     </div>
     <p class="muted" id="usernameMsg">3 to 16 letters, numbers or underscores. You can change it once every 24 hours.</p>
     <p class="muted" id="lbSubmitInfo"></p>
-    <h3 class="group">Recovery key</h3>
-    <p class="muted">Your Player ID and its secret live in this browser. The recovery key lets you restore the same identity (and username) on another device or after clearing your browser. Treat it like a password.</p>
-    <div class="controls" style="justify-content:flex-start;margin-top:8px"><button id="copyKeyBtn">Copy recovery key</button></div>
-    <textarea id="keyText" rows="2" placeholder="Paste a recovery key here to restore your identity on this device" spellcheck="false"></textarea>
-    <div class="controls" style="justify-content:flex-start;margin-top:8px"><button id="restoreKeyBtn">Restore identity</button></div>
+
    </section>
    <section class="panel">
     <div class="panel-head"><h2>Leaderboard</h2><button id="lbRefresh">Refresh</button></div>
@@ -279,11 +275,11 @@ body.gate-locked .wrap,body.gate-locked .codechip{visibility:hidden}
 
  <section id="tab-stats" hidden>
   <section class="panel">
-   <div class="panel-head"><h2>Player Identity</h2><span><span class="muted">Player ID</span> <span class="owner-badge" id="ownerBadge" hidden>OWNER</span></span></div>
+   <div class="panel-head"><h2>Account</h2><span class="owner-badge" id="ownerBadge" hidden>OWNER</span></div>
    <div class="player-id-card">
-    <div class="player-id-value" id="playerIdValue" aria-label="Your permanent Player ID"></div>
-    <button id="copyPlayerIdBtn">Copy ID</button>
-    <p class="muted player-id-note">This ID stays the same through progress resets, save imports, rebirths, ascensions, and game updates. It is random and not tied to your IP address. It is registered with the leaderboard server when you set a username. Use the recovery key on the Leaderboard tab to keep it if you clear your browser or switch devices.</p>
+    <strong id="accountName">Not signed in</strong>
+    <button class="danger" id="logoutBtn">Log out</button>
+    <p class="muted player-id-note">Your game progress is saved separately for each private account on this browser. Logging out does not delete either account's save.</p>
    </div>
   </section>
   <section class="panel" style="margin-top:14px">
@@ -295,7 +291,7 @@ body.gate-locked .wrap,body.gate-locked .codechip{visibility:hidden}
  <section id="tab-admin" hidden>
   <section class="panel" id="testLabPanel" hidden>
    <div class="panel-head"><h2>TestAcc Lab</h2><span class="owner-badge">TEST ACCOUNT</span></div>
-   <p class="muted">Testing-only upgrades. These bonuses apply only while using the authorized TestAcc Player ID.</p>
+   <p class="muted">Testing-only upgrades. These bonuses apply only while signed in to the authorized TestAcc account.</p>
    <div class="upgrade">
     <div><h3 id="testReactorTitle">Test Reactor · Lv 0/5</h3><p id="testReactorDesc">Double click power and Energy/sec per level.</p></div>
     <button class="buy primary" id="testReactorBuy"><b>Upgrade</b><small>1B energy</small></button>
@@ -368,7 +364,7 @@ body.gate-locked .wrap,body.gate-locked .codechip{visibility:hidden}
    <input id="importFile" type="file" accept=".txt,.elsave,text/plain" hidden>
    <textarea id="saveText" rows="3" placeholder="Your V4 save code appears here. Paste a supported save code here and press Import code." spellcheck="false"></textarea>
    <div class="controls" style="justify-content:flex-start;margin-top:8px"><button id="importBtn">Import code</button></div>
-   <p class="muted" style="margin-top:10px">V4 uses a versioned save format with integrity checks, automatic V3 migration, and two rolling backups. Autosaves every 10 seconds. V3 save codes remain importable. Your Player ID is stored separately from progression.</p>
+   <p class="muted" style="margin-top:10px">V4 uses a versioned save format with integrity checks, automatic V3 migration, and two rolling backups. Autosaves every 10 seconds. V3 save codes remain importable. Your account saves are stored separately from progression.</p>
   </section>
  </section>
 
@@ -383,14 +379,12 @@ body.gate-locked .wrap,body.gate-locked .codechip{visibility:hidden}
   <h1 id="gateTitle">Account login</h1>
   <p id="gateDescription">Private access is limited to the Owner and TestAcc accounts.</p>
   <form id="gateForm">
-   <input id="gatePlayerId" type="text" autocomplete="username" maxlength="42" placeholder="Player ID" required>
-   <input id="gatePassword" type="password" autocomplete="current-password" minlength="8" maxlength="128" placeholder="Shared account password" required>
-   <textarea id="gateRecoveryKey" rows="3" autocomplete="off" placeholder="Paste this account's recovery key" required style="width:100%;margin:7px 0;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:#0b1222;color:var(--text);font:inherit;resize:vertical"></textarea>
+   <input id="gateUsername" type="text" class="nocase" autocomplete="username" maxlength="16" placeholder="Username" required>
+   <input id="gatePassword" type="password" autocomplete="current-password" minlength="8" maxlength="128" placeholder="Password" required>
    <button class="primary" id="gateSubmit" type="submit" style="width:100%">Log in</button>
   </form>
   <p class="gate-error" id="gateError" aria-live="polite"></p>
-  <p class="muted">All three fields are required. The Player ID must match the ID inside the recovery key. This private build does not offer public registration.</p>
-  <p class="muted">Your password is verified by the game server. Each account is enrolled once using its recovery key; use the same password for both accounts.</p>
+  <p class="muted">Private access is limited to the existing Owner and TestAcc accounts. Public registration is disabled.</p>
  </div>
 </div>
 <div class="modal" id="modal" hidden><div class="box"><p id="modalMsg"></p><div class="controls"><button class="primary" id="modalYes">Confirm</button><button id="modalNo">Cancel</button></div></div></div>
@@ -429,9 +423,8 @@ const LEGACY_ACCOUNT_SAVE_KEYS = [KEY, BAK1, BAK2];
 const SKEY = "energyLabSound40";
 const LEGACY_SAVE_KEYS = ["energyLabSave30", "energyLabSave30b", "energyLabSave30c", "energyLabSave21"];
 const LEGACY_SOUND_KEY = "energyLabSound30";
-const PLAYER_ID_KEY = "energyLabPlayerId40";
-const PLAYER_SECRET_KEY = "energyLabPlayerSecret40";
-const USERNAME_KEY = "energyLabUsername40";
+const SESSION_TOKEN_KEY = "energyLabSessionToken56";
+let USERNAME_KEY = "energyLabUsername56";
 const SID = Math.random().toString(36).slice(2) + Date.now().toString(36);
 const SELL_RETURN = 0.9;
 const UPGRADE_CAP = 5000;
@@ -636,7 +629,6 @@ const store = (() => {
   };
 })();
 
-const ACCESS_PASSWORD_KEY = "energyLabAccessPassword54";
 const ACCESS_ITERATIONS = 210000;
 function bytesToHex(bytes) {
   return Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, "0")).join("");
@@ -661,103 +653,94 @@ function releaseAccessGate() {
   document.body.classList.remove("gate-locked");
   $("accessGate").hidden = true;
 }
-async function initAccessGate() {
-  const saved = store.get(ACCESS_PASSWORD_KEY);
-  const hasPassword = !!saved;
-  $("gateTitle").textContent = "Account login";
-  $("gateDescription").textContent = hasPassword
-    ? "Enter the credentials for Owner or TestAcc."
-    : "First login on this browser: your recovery key verifies the account, then this browser saves your shared password check.";
-  $("gatePassword").autocomplete = hasPassword ? "current-password" : "new-password";
-  $("gateSubmit").textContent = "Log in";
-  $("gatePlayerId").focus();
-  $("gateForm").addEventListener("submit", async e => {
-    e.preventDefault();
-    const id = $("gatePlayerId").value.trim().toUpperCase();
-    const password = $("gatePassword").value;
-    const keyText = $("gateRecoveryKey").value;
-    const error = $("gateError");
-    error.textContent = "";
-    $("gateSubmit").disabled = true;
-    try {
-      if (id !== OWNER_PLAYER_ID && id !== TESTACC_PLAYER_ID) throw new Error("This private build only accepts the Owner and TestAcc Player IDs.");
-      if (password.length < 8) throw new Error("Enter the shared account password (at least 8 characters).");
-      const recovery = parseRecoveryKey(keyText);
-      if (!recovery) throw new Error("That recovery key is invalid.");
-      if (recovery.id !== id) throw new Error("The recovery key does not belong to the Player ID entered.");
-      if (!onlineOn()) throw new Error("The game server is not configured. Login cannot verify your recovery key.");
-      const verified = await api("player_status", {p_player_id:recovery.id, p_secret:recovery.secret});
-      if (!(verified && verified.registered && verified.verified)) throw new Error("The server did not verify this account's recovery key.");
-      const accountInfo = await api("get_private_login_salt", {p_player_id:id, p_secret:recovery.secret});
-      if (!accountInfo || accountInfo.ok !== true) throw new Error("Private login is not configured yet. Run the V5.6 SQL setup first.");
-      if (accountInfo.configured) {
-        const digest = await passwordDigest(password, accountInfo.salt, accountInfo.iterations);
-        const check = await api("verify_private_login", {p_player_id:id, p_secret:recovery.secret, p_password_hash:digest});
-        if (!(check && check.ok === true && check.verified === true)) throw new Error("Incorrect account password.");
-      } else {
-        const salt = randomHex(16);
-        const iterations = ACCESS_ITERATIONS;
-        const digest = await passwordDigest(password, salt, iterations);
-        const enrolled = await api("set_private_login_password", {p_player_id:id, p_secret:recovery.secret, p_salt:salt, p_password_hash:digest, p_iterations:iterations});
-        if (!(enrolled && enrolled.ok === true)) throw new Error("Password setup failed. Check the SQL setup and try again.");
-      }
-      applyIdentity(recovery.id, recovery.secret);
-      releaseAccessGate();
-      $("gatePassword").value = "";
-      $("gateRecoveryKey").value = "";
-      toast("Logged in as " + (id === OWNER_PLAYER_ID ? "Owner" : "TestAcc") + ".");
-    } catch (err) {
-      error.textContent = err && err.message ? err.message : "Login failed. Check all three fields and try again.";
-      $("gatePassword").select();
-    } finally {
-      $("gateSubmit").disabled = false;
-    }
-  });
-}
 
 const ID_RE = /^EL-[0-9A-F]{8}(?:-[0-9A-F]{4}){3}-[0-9A-F]{12}$/;
 const USERNAME_RE = /^[A-Za-z0-9_]{3,16}$/;
-function generatePlayerId() {
-  const bytes = new Uint8Array(16);
-  if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(bytes);
-  else for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const h = Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
-  return "EL-" + h.slice(0, 8) + "-" + h.slice(8, 12) + "-" + h.slice(12, 16) + "-" + h.slice(16, 20) + "-" + h.slice(20);
-}
-function getPlayerId() {
-  const saved = store.get(PLAYER_ID_KEY);
-  if (typeof saved === "string" && ID_RE.test(saved)) return saved;
-  const id = generatePlayerId();
-  store.set(PLAYER_ID_KEY, id);
-  return id;
-}
-function getPlayerSecret() {
-  const saved = store.get(PLAYER_SECRET_KEY);
-  if (typeof saved === "string" && /^[0-9a-f]{64}$/.test(saved)) return saved;
-  const s = randomHex(32);
-  store.set(PLAYER_SECRET_KEY, s);
-  return s;
-}
-let PLAYER_ID = getPlayerId();
-let PLAYER_SECRET = getPlayerSecret();
 const OWNER_PLAYER_ID = "EL-13B6729B-7DF0-4369-A078-FAA9831EA890";
 const TESTACC_PLAYER_ID = "EL-06CC7F1E-0B48-4A28-85E5-FE70805620DB";
-let IS_OWNER = PLAYER_ID === OWNER_PLAYER_ID;
-let IS_TESTACC = PLAYER_ID === TESTACC_PLAYER_ID;
-const INITIAL_PLAYER_ID = PLAYER_ID;
+let SESSION_TOKEN = store.get(SESSION_TOKEN_KEY) || "";
+let PLAYER_ID = "";
+let IS_OWNER = false;
+let IS_TESTACC = false;
 function setSaveKeysForPlayer(id) {
   const suffix = id.replace(/[^A-Z0-9]/g, "");
   KEY = "energyLabSave_" + suffix;
   BAK1 = KEY + "_b";
   BAK2 = KEY + "_c";
-  if (id === INITIAL_PLAYER_ID && !store.get(KEY) && store.get(LEGACY_ACCOUNT_SAVE_KEYS[0])) {
-    for (let i = 0; i < LEGACY_ACCOUNT_SAVE_KEYS.length; i++) {
-      const value = store.get(LEGACY_ACCOUNT_SAVE_KEYS[i]);
-      if (value) store.set([KEY, BAK1, BAK2][i], value);
-    }
+  USERNAME_KEY = "energyLabUsername56_" + suffix;
+}
+function applyIdentity(id, token, username) {
+  if (!ID_RE.test(String(id || "")) || !token) throw new Error("The server returned an invalid account session.");
+  PLAYER_ID = id;
+  SESSION_TOKEN = token;
+  IS_OWNER = id === OWNER_PLAYER_ID;
+  IS_TESTACC = id === TESTACC_PLAYER_ID;
+  store.set(SESSION_TOKEN_KEY, token);
+  // Remove obsolete browser-held identity secrets; account saves are untouched.
+  store.remove("energyLabPlayerSecret40");
+  store.remove("energyLabPlayerId40");
+  store.remove("energyLabAccessPassword54");
+  setSaveKeysForPlayer(id);
+  state = fresh();
+  load();
+  profile.state = "ok";
+  profile.username = username || store.get(USERNAME_KEY) || "";
+  if (profile.username) store.set(USERNAME_KEY, profile.username);
+  lastSubmitSig = ""; lastSubmitAt = 0; lastSubmitOk = 0;
+  Object.keys(lbCache).forEach(k => delete lbCache[k]);
+  refreshIdentityUI();
+  renderProfile();
+  refreshProfile();
+  refreshServerBoost();
+  loadBoard(true);
+  ui();
+}
+async function initAccessGate() {
+  $("gateUsername").focus();
+  // Reuse a saved server session only after the server validates it.
+  if (SESSION_TOKEN && onlineOn()) {
+    try {
+      const current = await api("get_player_profile", {p_session_token:SESSION_TOKEN});
+      const id = current && (current.player_id || current.id);
+      if (current && current.ok !== false && ID_RE.test(String(id || ""))) {
+        applyIdentity(id, SESSION_TOKEN, current.username || "");
+        releaseAccessGate();
+        return;
+      }
+    } catch (e) {}
+    SESSION_TOKEN = "";
+    store.remove(SESSION_TOKEN_KEY);
   }
+  $("gateForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const username = $("gateUsername").value.trim();
+    const password = $("gatePassword").value;
+    const error = $("gateError");
+    error.textContent = "";
+    $("gateSubmit").disabled = true;
+    try {
+      if (!USERNAME_RE.test(username)) throw new Error("Enter a valid account username.");
+      if (password.length < 8) throw new Error("Enter the account password (at least 8 characters).");
+      if (!onlineOn()) throw new Error("The game server is unavailable. Login needs a server connection.");
+      const saltInfo = await api("get_login_salt", {p_username:username});
+      if (!saltInfo || saltInfo.ok === false || !saltInfo.salt || !saltInfo.iterations) throw new Error("That account is unavailable or its password login is not configured.");
+      const digest = await passwordDigest(password, saltInfo.salt, Number(saltInfo.iterations));
+      const result = await api("login_with_password", {p_username:username, p_password_hash:digest});
+      if (!result || result.ok !== true) throw new Error("Incorrect username or password.");
+      const token = result.session_token || result.token;
+      const id = result.player_id || result.id;
+      if (!ID_RE.test(String(id || "")) || !token || (id !== OWNER_PLAYER_ID && id !== TESTACC_PLAYER_ID)) throw new Error("The server returned an account that is not allowed in this private build.");
+      applyIdentity(id, token, result.username || username);
+      releaseAccessGate();
+      $("gatePassword").value = "";
+      toast("Logged in successfully.");
+    } catch (err) {
+      error.textContent = err && err.message ? err.message : "Login failed. Check your username and password.";
+      $("gatePassword").select();
+    } finally {
+      $("gateSubmit").disabled = false;
+    }
+  });
 }
 
 const zero = list => Object.fromEntries(list.map(x => [x, 0]));
@@ -908,6 +891,7 @@ function rotateBackups(now) {
   }
 }
 function save() {
+  if (!PLAYER_ID) return false;
   if (conflict) return false;
   if (!sane()) { saveFailed = true; updateStatus(); return false; }
   try {
@@ -961,7 +945,7 @@ function sanitize(d) {
 }
 function load() {
   let found = null, from = "", migrated = false;
-  const keys = [KEY, BAK1, BAK2, ...(PLAYER_ID === INITIAL_PLAYER_ID ? LEGACY_SAVE_KEYS : [])];
+  const keys = [KEY, BAK1, BAK2];
   for (const k of keys) {
     const raw = store.get(k); if (!raw) continue;
     try {
@@ -1268,7 +1252,10 @@ async function api(fn, args, timeoutMs) {
   try {
     const headers = {"Content-Type":"application/json", "apikey":SUPABASE_ANON_KEY};
     if (SUPABASE_ANON_KEY.startsWith("eyJ")) headers.Authorization = "Bearer " + SUPABASE_ANON_KEY;
-    const res = await fetch(SUPABASE_URL.replace(/\/+$/, "") + "/rest/v1/rpc/" + fn, {method:"POST", headers, body:JSON.stringify(args || {}), signal:ctl.signal});
+    const publicCalls = ["get_login_salt", "login_with_password", "get_leaderboard", "get_server_boost"];
+    const payload = {...(args || {})};
+    if (!publicCalls.includes(fn) && SESSION_TOKEN && payload.p_session_token === undefined) payload.p_session_token = SESSION_TOKEN;
+    const res = await fetch(SUPABASE_URL.replace(/\/+$/, "") + "/rest/v1/rpc/" + fn, {method:"POST", headers, body:JSON.stringify(payload), signal:ctl.signal});
     if (!res.ok) {
       let detail = "";
       try { const j = await res.json(); detail = j.message || j.hint || j.error || ""; } catch (e) {}
@@ -1285,11 +1272,10 @@ const USERNAME_ERRORS = {
   "reserved_username:testacc":"That username contains a reserved TestAcc name. Pick another.",
   "reserved_username:vex":"That username contains a reserved Vex name. Pick another.",
   too_soon:"You can only change your username once every 24 hours.",
-  wrong_secret:"This Player ID is registered with a different key. Restore your recovery key first.",
-  bad_id:"Your Player ID looks invalid. Try restoring your recovery key.",
-  bad_secret:"Your Player secret looks invalid. Try restoring your recovery key."
+  invalid_session:"Your login session expired. Log in again.",
+  unauthorized:"Your login session is invalid. Log in again."
 };
-const profile = {state:"unknown", username:store.get(USERNAME_KEY) || ""};
+const profile = {state:"unknown", username:""};
 let lastSubmitAt = 0, lastSubmitSig = "", lastSubmitOk = 0, lastSubmitLife = 0, lastSubmitPlay = 0, submitting = false, syncError = "";
 let lbBoard = "ascensions", lbOpenedAt = 0;
 const lbCache = {};
@@ -1312,7 +1298,7 @@ function renderProfile() {
   $("usernameBtn").disabled = !on;
   let info;
   if (!on) info = "Online features are off until the Supabase details are added.";
-  else if (profile.state === "mismatch") info = "This Player ID is registered with a different key. Restore your recovery key below.";
+  else if (profile.state === "mismatch") info = "This account could not be verified. Log in again.";
   else if (syncError) info = "Score sync failed (" + syncError + "). It will retry automatically.";
   else if (!profile.username) info = "Set a username to appear on the leaderboards.";
   else if (lastSubmitOk) info = "Score synced " + ago(lastSubmitOk) + ".";
@@ -1332,11 +1318,11 @@ async function refreshServerBoost() {
   ui();
 }
 async function setServerBoost(multiplier, seconds) {
-  if (!IS_OWNER || !onlineOn()) return;
+  if (!SESSION_TOKEN || !IS_OWNER || !onlineOn()) return;
   document.querySelectorAll(".server-boost-btn").forEach(b => b.disabled = true);
   $("serverBoostClear").disabled = true;
   try {
-    const r = await api("set_server_boost", {p_player_id:PLAYER_ID, p_secret:PLAYER_SECRET, p_multiplier:multiplier, p_duration_seconds:seconds});
+    const r = await api("set_server_boost", {p_multiplier:multiplier, p_duration_seconds:seconds});
     if (!r || !r.ok) throw new Error((r && r.error) || "The server rejected the boost.");
     await refreshServerBoost();
     $("serverBoostMsg").textContent = seconds ? "Server-wide ×" + multiplier + " boost activated." : "Server-wide boost ended.";
@@ -1349,23 +1335,25 @@ async function setServerBoost(multiplier, seconds) {
 }
 
 async function refreshProfile() {
+  if (!PLAYER_ID || !SESSION_TOKEN) { profile.state = "unknown"; renderProfile(); return; }
   if (!onlineOn()) { renderProfile(); return; }
   try {
-    const r = await api("player_status", {p_player_id:PLAYER_ID, p_secret:PLAYER_SECRET});
-    if (!r || !r.registered) { profile.state = "unregistered"; }
-    else if (!r.verified) { profile.state = "mismatch"; }
+    if (!SESSION_TOKEN || !PLAYER_ID) { profile.state = "unknown"; renderProfile(); return; }
+    const r = await api("get_player_profile", {});
+    if (!r || r.ok === false || (r.player_id && r.player_id !== PLAYER_ID)) { profile.state = "offline"; }
     else { profile.state = "ok"; profile.username = r.username || ""; store.set(USERNAME_KEY, profile.username); }
     syncError = "";
   } catch (e) { profile.state = "offline"; syncError = e.message; }
   renderProfile();
 }
 async function claimUsername() {
+  if (!PLAYER_ID || !SESSION_TOKEN) return setUsernameMsg("Log in first.", true);
   const name = $("usernameInput").value.trim();
   if (!USERNAME_RE.test(name)) return setUsernameMsg(USERNAME_ERRORS.bad_username, true);
   if (!onlineOn()) return setUsernameMsg("The leaderboard server isn't connected yet.", true);
   $("usernameBtn").disabled = true;
   try {
-    const r = await api("set_username", {p_player_id:PLAYER_ID, p_secret:PLAYER_SECRET, p_username:name});
+    const r = await api("set_username", {p_username:name});
     if (r && r.ok) {
       profile.username = r.username; profile.state = "ok"; store.set(USERNAME_KEY, r.username);
       $("usernameInput").value = "";
@@ -1373,7 +1361,7 @@ async function claimUsername() {
       lastSubmitSig = ""; lastSubmitAt = 0; submitScore(true);
       Object.keys(lbCache).forEach(k => delete lbCache[k]);
     } else {
-      if (r && r.error === "wrong_secret") profile.state = "mismatch";
+      if (r && r.error === "invalid_session") profile.state = "offline";
       setUsernameMsg(USERNAME_ERRORS[r && r.error] || "Couldn't set that username.", true);
     }
   } catch (e) {
@@ -1398,7 +1386,7 @@ async function claimUsername() {
 // Track lifetime energy in signature
 const scoreSig = () => state.ascensions + "|" + state.totalRebirths + "|" + state.challenge.done.length;
 function canSubmit() {
-  return onlineOn() && !!profile.username && profile.state !== "mismatch" && profile.state !== "unregistered" && !conflict;
+  return !!PLAYER_ID && !!SESSION_TOKEN && onlineOn() && !!profile.username && profile.state !== "mismatch" && profile.state !== "unregistered" && !conflict;
 }
 async function submitScore(force) {
   if (!canSubmit() || submitting) return;
@@ -1412,8 +1400,6 @@ async function submitScore(force) {
   const playSent = Math.floor(Number.isFinite(state.stats.playtime) ? state.stats.playtime : 0);
   try {
     const r = await api("submit_score", {
-      p_player_id: PLAYER_ID, 
-      p_secret: PLAYER_SECRET, 
       p_ascensions: state.ascensions, 
       p_total_rebirths: state.totalRebirths, 
       p_challenges: state.challenge.done.length,
@@ -1424,7 +1410,7 @@ async function submitScore(force) {
       lastSubmitSig = sig; lastSubmitOk = Date.now(); lastSubmitLife = lifeSent; lastSubmitPlay = playSent; syncError = "";
       Object.keys(lbCache).forEach(k => delete lbCache[k]); // our own score just changed, so cached boards are stale
     }
-    else if (r && r.error === "wrong_secret") profile.state = "mismatch";
+    else if (r && r.error === "invalid_session") profile.state = "offline";
     else if (r && r.error === "bad_values") { lastSubmitSig = sig; lastSubmitLife = lifeSent; lastSubmitPlay = playSent; }
     else if (r && r.error === "rate_limited") { /* try again on the next check */ }
     else if (r && r.error === "not_registered") profile.state = "unregistered";
@@ -1440,7 +1426,7 @@ async function loadBoard(force) {
   lastBoardFetch = Date.now();
   if (!c) $("lbMeta").textContent = "Loading…";
   try {
-    const rows = await api("get_leaderboard", {p_board:board, p_limit:50, p_player_id:PLAYER_ID});
+    const rows = await api("get_leaderboard", {p_board:board, p_limit:50, p_player_id:PLAYER_ID || null});
     lbCache[board] = {t:Date.now(), rows:Array.isArray(rows) ? rows : []};
   } catch (e) {
     if (board === lbBoard) $("lbMeta").textContent = "Couldn't load the leaderboard (" + e.message + "). Try Refresh.";
@@ -1471,46 +1457,18 @@ v.textContent = row.value === "TEST"
 }
 function onLeaderboardOpen() { lbOpenedAt = Date.now(); refreshProfile(); loadBoard(false); }
 
-function makeRecoveryKey() {
-  const json = JSON.stringify({id:PLAYER_ID, secret:PLAYER_SECRET});
-  return "ELKEY:" + hash(json) + ":" + btoa(json);
-}
-function parseRecoveryKey(text) {
-  const t = String(text || "").replace(/\s+/g, "");
-  const m = /^ELKEY:([0-9a-f]{8}):([A-Za-z0-9+/=]+)$/.exec(t);
-  if (!m) return null;
-  let json; try { json = atob(m[2]); } catch (e) { return null; }
-  if (hash(json) !== m[1]) return null;
-  try {
-    const o = JSON.parse(json);
-    if (o && typeof o.id === "string" && ID_RE.test(o.id) && typeof o.secret === "string" && /^[0-9a-f]{64}$/.test(o.secret)) return o;
-  } catch (e) {}
-  return null;
-}
-function applyIdentity(id, secret) {
-  PLAYER_ID = id; PLAYER_SECRET = secret; IS_OWNER = PLAYER_ID === OWNER_PLAYER_ID; IS_TESTACC = PLAYER_ID === TESTACC_PLAYER_ID;
-  store.set(PLAYER_ID_KEY, id); store.set(PLAYER_SECRET_KEY, secret);
-  setSaveKeysForPlayer(id);
-  state = fresh(); load();
-  profile.state = "unknown"; profile.username = ""; store.remove(USERNAME_KEY);
-  lastSubmitSig = ""; lastSubmitAt = 0; lastSubmitOk = 0;
-  Object.keys(lbCache).forEach(k => delete lbCache[k]);
+function logout() {
+  const token = SESSION_TOKEN;
+  SESSION_TOKEN = "";
+  store.remove(SESSION_TOKEN_KEY);
+  if (token) api("logout_session", {p_session_token:token}).catch(() => {});
+  PLAYER_ID = ""; IS_OWNER = false; IS_TESTACC = false;
+  profile.state = "unknown"; profile.username = "";
+  $("gateUsername").value = ""; $("gatePassword").value = ""; $("gateError").textContent = "";
+  $("accessGate").hidden = false;
+  document.body.classList.add("gate-locked");
   refreshIdentityUI();
-  refreshProfile(); loadBoard(true);
-}
-async function restoreIdentity() {
-  const o = parseRecoveryKey($("keyText").value);
-  if (!o) return toast("That isn't a valid recovery key.");
-  if (o.id === PLAYER_ID && o.secret === PLAYER_SECRET) return toast("That's already this device's identity.");
-  if (onlineOn()) {
-    try {
-      const r = await api("player_status", {p_player_id:o.id, p_secret:o.secret});
-      if (!(r && r.registered && r.verified)) return toast("The server doesn't recognise that recovery key.");
-    } catch (e) { return toast("Couldn't reach the server to check that key."); }
-  }
-  confirmBox("Switch this device to the Player ID in that key? Your current Player ID will be replaced here.", () => {
-    applyIdentity(o.id, o.secret); $("keyText").value = ""; toast("Identity restored.");
-  });
+  renderProfile();
 }
 
 function makeBar(kind) {
@@ -1655,7 +1613,8 @@ for (const b of LB_BOARDS) {
 }
 
 function refreshIdentityUI() {
-  $("playerIdValue").textContent = PLAYER_ID;
+  $("accountName").textContent = !PLAYER_ID ? "Not signed in" : IS_OWNER ? "Owner account · Vex" : IS_TESTACC ? "TestAcc account" : "Unknown account";
+  $("logoutBtn").disabled = !SESSION_TOKEN;
   $("ownerBadge").hidden = !IS_OWNER;
   $("adminNav").hidden = !(IS_OWNER || IS_TESTACC);
   $("testLabPanel").hidden = !IS_TESTACC;
@@ -1802,7 +1761,7 @@ document.querySelectorAll(".server-boost-btn").forEach(b => b.addEventListener("
 $("serverBoostClear").addEventListener("click", () => setServerBoost(1, 0));
 
 $("orb").addEventListener("click", clickCore);
-$("copyPlayerIdBtn").addEventListener("click", () => copyText(PLAYER_ID, "Player ID copied.", "keyText"));
+
 document.querySelectorAll(".js-rebirth").forEach(b => b.addEventListener("click", () => doRebirth(false)));
 document.querySelectorAll(".js-ascend").forEach(b => b.addEventListener("click", () => {
   if (!canAscend()) return;
@@ -1819,8 +1778,7 @@ $("gAmount").addEventListener("keydown", e => { if (e.key === "Enter") gamble();
 $("usernameBtn").addEventListener("click", claimUsername);
 $("usernameInput").addEventListener("keydown", e => { if (e.key === "Enter") claimUsername(); });
 $("lbRefresh").addEventListener("click", async () => { await submitScore(true); refreshProfile(); loadBoard(true); });
-$("copyKeyBtn").addEventListener("click", () => copyText(makeRecoveryKey(), "Recovery key copied. Keep it somewhere safe.", "keyText"));
-$("restoreKeyBtn").addEventListener("click", restoreIdentity);
+$("logoutBtn").addEventListener("click", logout);
 $("autoUpC").addEventListener("change", e => { state.settings.autoUpgradeClick = e.target.checked; save(); });
 $("autoUpG").addEventListener("change", e => { state.settings.autoUpgradeGen = e.target.checked; save(); });
 $("autoRe").addEventListener("change", e => { state.settings.autoRebirth = e.target.checked; save(); });
@@ -1866,7 +1824,7 @@ $("resetBtn").addEventListener("click", () => confirmBox("Delete ALL your Energy
   state = fresh(); store.remove(KEY); store.remove(BAK1); store.remove(BAK2);
   for (const k of LEGACY_SAVE_KEYS) store.remove(k);
   conflict = false;
-  renderAch(); renderCodes(); ui(); save(); renderProfile(); toast("Progress reset. Your Player ID was kept.");
+  renderAch(); renderCodes(); ui(); save(); renderProfile(); toast("Progress reset. Your account ID was kept.");
 }));
 let chipUntil = 0;
 $("chipUse").addEventListener("click", () => { redeem($("chipCode").textContent, false); $("codeChip").hidden = true; chipUntil = 0; });
@@ -1879,15 +1837,14 @@ window.addEventListener("storage", e => {
   } catch (err) {}
 });
 
-setSaveKeysForPlayer(PLAYER_ID);
-load();
+if (PLAYER_ID) { setSaveKeysForPlayer(PLAYER_ID); load(); }
 $("volume").value = Math.round(state.settings.volume * 100);
 $("storeMode").textContent = store.mode === "local" ? "Storage: browser" : store.mode === "session" ? "Storage: this tab only" : "Storage: unavailable (use Export)";
 $("storeWarn").hidden = store.mode === "local";
 refreshIdentityUI();
 renderAch(); renderCodes(); renderBoard(); checkAch(); ui(); save(); renderProfile();
 refreshIdentityUI();
-refreshProfile(); refreshServerBoost();
+if (SESSION_TOKEN && PLAYER_ID) { refreshProfile(); refreshServerBoost(); }
 initAccessGate();
 
 let lastT = Date.now(), productionElapsedMs = 0, lastAuto = 0, lastOnlineCheck = 0, nextRoll = Date.now() + 60000, nextCode = Date.now() + rand(CODE_FIRST[0], CODE_FIRST[1]);

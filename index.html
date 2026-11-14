@@ -118,7 +118,7 @@ body.gate-locked .wrap,body.gate-locked .codechip{visibility:hidden}
 </head>
 <body class="gate-locked">
 <div class="wrap">
- <div class="top"><div><div class="brand">ENERGY LAB // 5.6</div><div class="sub">Energy Lab V5.5 Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
+ <div class="top"><div><div class="brand">ENERGY LAB // 5.6</div><div class="sub">Energy Lab V5.6 Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
  <div class="warn" id="storeWarn" hidden>Saving isn't fully available in this embedded view, so progress may only last until you close the tab. Go to Settings and use Export save file or Copy save code to keep your progress.</div>
  <div class="boost" id="boost" hidden></div>
  <section class="stats">
@@ -1913,6 +1913,11 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) save(
 window.addEventListener("pagehide", save);
 window.addEventListener("beforeunload", save);
 })();
+</script>
+
+<script>
+  // Suppress the browser's default right-click context menu in Energy Lab.
+  document.addEventListener("contextmenu", (event) => event.preventDefault());
 </script>
 </body>
 </html>

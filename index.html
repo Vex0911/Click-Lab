@@ -104,12 +104,21 @@ details.pick summary{cursor:pointer;font-weight:700;font-size:13px}
 .codechip b{color:var(--gold);letter-spacing:.08em}
 .modal{position:fixed;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;z-index:40;padding:16px}
 .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;max-width:420px;text-align:center}
+
+body.gate-locked .wrap,body.gate-locked .codechip{visibility:hidden}
+#accessGate{position:fixed;inset:0;z-index:100;background:radial-gradient(ellipse at 50% -15%,#263c69 0,transparent 48%),var(--bg);display:flex;align-items:center;justify-content:center;padding:18px}
+#accessGate .gate-card{width:min(420px,100%);background:linear-gradient(145deg,var(--panel),#111a2e);border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 20px 70px #0009}
+#accessGate h1{font-size:20px;margin:0 0 6px}
+#accessGate p{color:var(--muted);font-size:13px}
+#accessGate input{width:100%;margin:7px 0;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:#0b1222;color:var(--text);font:inherit}
+#accessGate .gate-error{min-height:20px;color:var(--red);font-size:12px}
+
 @media(max-width:720px){body{padding:12px}.main,.grid2{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr;gap:7px}.center{min-height:300px}.orb{width:160px;height:160px}.upgrade-list{max-height:min(430px,70vh)}}
 </style>
 </head>
-<body>
+<body class="gate-locked">
 <div class="wrap">
- <div class="top"><div><div class="brand">ENERGY LAB // 5.4</div><div class="sub">Energy Lab V5.4 Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
+ <div class="top"><div><div class="brand">ENERGY LAB // 5.5</div><div class="sub">Energy Lab V5.5 Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
  <div class="warn" id="storeWarn" hidden>Saving isn't fully available in this embedded view, so progress may only last until you close the tab. Go to Settings and use Export save file or Copy save code to keep your progress.</div>
  <div class="boost" id="boost" hidden></div>
  <section class="stats">
@@ -367,6 +376,21 @@ details.pick summary{cursor:pointer;font-weight:700;font-size:13px}
 
 <div class="codechip" id="codeChip" hidden><span class="muted">New code:</span><b id="chipCode"></b><button class="primary" id="chipUse">Redeem</button><button class="quiet" id="chipX" aria-label="Dismiss">✕</button></div>
 <div class="toast" id="toast"></div>
+
+<div id="accessGate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+ <div class="gate-card">
+  <div class="brand">ENERGY LAB // ACCESS</div>
+  <h1 id="gateTitle">Set your game password</h1>
+  <p id="gateDescription">Create a password to lock this browser copy of Energy Lab. You'll enter it whenever you open the game.</p>
+  <form id="gateForm">
+   <input id="gatePassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Password (8+ characters)" required>
+   <input id="gateConfirm" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Confirm password" required>
+   <button class="primary" id="gateSubmit" type="submit" style="width:100%">Set password</button>
+  </form>
+  <p class="gate-error" id="gateError" aria-live="polite"></p>
+  <p class="muted">This is a local browser lock, not server-side account security. Keep your password safe.</p>
+ </div>
+</div>
 <div class="modal" id="modal" hidden><div class="box"><p id="modalMsg"></p><div class="controls"><button class="primary" id="modalYes">Confirm</button><button id="modalNo">Cancel</button></div></div></div>
 
 <script>
@@ -396,7 +420,7 @@ function shuffle(arr) {
 }
 
 /* ---------- constants ---------- */
-const VERSION = "5.4";
+const VERSION = "5.5";
 const SAVE_SCHEMA = 4;
 const KEY = "energyLabSave40", BAK1 = "energyLabSave40b", BAK2 = "energyLabSave40c";
 const SKEY = "energyLabSound40";
@@ -608,6 +632,75 @@ const store = (() => {
     }
   };
 })();
+
+const ACCESS_PASSWORD_KEY = "energyLabAccessPassword54";
+const ACCESS_ITERATIONS = 210000;
+function bytesToHex(bytes) {
+  return Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, "0")).join("");
+}
+function hexToBytes(hex) {
+  if (typeof hex !== "string" || !/^[0-9a-f]+$/i.test(hex) || hex.length % 2) throw new Error("Invalid stored password data.");
+  return new Uint8Array(hex.match(/.{2}/g).map(x => parseInt(x, 16)));
+}
+async function passwordDigest(password, saltHex, iterations) {
+  if (!window.crypto || !window.crypto.subtle) throw new Error("Secure password storage is unavailable in this browser. Open the game in a modern browser over HTTPS.");
+  const key = await window.crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await window.crypto.subtle.deriveBits({name:"PBKDF2", hash:"SHA-256", salt:hexToBytes(saltHex), iterations}, key, 256);
+  return bytesToHex(bits);
+}
+function sameHex(a, b) {
+  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+function releaseAccessGate() {
+  document.body.classList.remove("gate-locked");
+  $("accessGate").hidden = true;
+}
+function initAccessGate() {
+  const saved = store.get(ACCESS_PASSWORD_KEY);
+  const hasPassword = !!saved;
+  $("gateTitle").textContent = hasPassword ? "Welcome back" : "Set your game password";
+  $("gateDescription").textContent = hasPassword
+    ? "Enter your password to unlock Energy Lab."
+    : "Create a password to lock this browser copy of Energy Lab. You'll enter it whenever you open the game.";
+  $("gateConfirm").hidden = hasPassword;
+  $("gateConfirm").required = !hasPassword;
+  $("gatePassword").autocomplete = hasPassword ? "current-password" : "new-password";
+  $("gateSubmit").textContent = hasPassword ? "Unlock game" : "Set password";
+  $("gatePassword").focus();
+  $("gateForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const password = $("gatePassword").value;
+    const confirm = $("gateConfirm").value;
+    const error = $("gateError");
+    error.textContent = "";
+    $("gateSubmit").disabled = true;
+    try {
+      if (hasPassword) {
+        const record = JSON.parse(saved);
+        const digest = await passwordDigest(password, record.salt, record.iterations);
+        if (!sameHex(digest, record.hash)) throw new Error("Incorrect password. Try again.");
+      } else {
+        if (password.length < 8) throw new Error("Use at least 8 characters.");
+        if (password !== confirm) throw new Error("The passwords don't match.");
+        const salt = randomHex(16);
+        const hash = await passwordDigest(password, salt, ACCESS_ITERATIONS);
+        const record = JSON.stringify({salt, hash, iterations:ACCESS_ITERATIONS});
+        if (!store.set(ACCESS_PASSWORD_KEY, record)) throw new Error("Couldn't save the password in this browser.");
+      }
+      releaseAccessGate();
+      $("gatePassword").value = "";
+      $("gateConfirm").value = "";
+    } catch (err) {
+      error.textContent = err && err.message ? err.message : "Couldn't verify the password.";
+      $("gatePassword").select();
+    } finally {
+      $("gateSubmit").disabled = false;
+    }
+  });
+}
 
 const ID_RE = /^EL-[0-9A-F]{8}(?:-[0-9A-F]{4}){3}-[0-9A-F]{12}$/;
 const USERNAME_RE = /^[A-Za-z0-9_]{3,16}$/;
@@ -1766,6 +1859,7 @@ refreshIdentityUI();
 renderAch(); renderCodes(); renderBoard(); checkAch(); ui(); save(); renderProfile();
 refreshIdentityUI();
 refreshProfile(); refreshServerBoost();
+initAccessGate();
 
 let lastT = Date.now(), productionElapsedMs = 0, lastAuto = 0, lastOnlineCheck = 0, nextRoll = Date.now() + 60000, nextCode = Date.now() + rand(CODE_FIRST[0], CODE_FIRST[1]);
 function autoBuy() {

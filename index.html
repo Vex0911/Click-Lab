@@ -1340,8 +1340,13 @@ function renderBoard() {
     const d = el("div", "lbrow" + (row.is_you ? " you" : "")), a = el("span", "rk"), b = el("span", "nm"), v = el("span", "vl");
     a.textContent = "#" + row.rank; 
     b.textContent = row.username + (row.is_you ? " (you)" : ""); 
-    v.textContent = lbBoard === 'lifetime_energy' ? fmt(row.value) : lbBoard === 'playtime' ? fmtTime(row.value) : Number(row.value).toLocaleString();
-    d.append(a, b, v); root.append(d);
+v.textContent = row.value === "TEST"
+  ? "TEST"
+  : lbBoard === 'lifetime_energy'
+    ? fmt(Number(row.value))
+    : lbBoard === 'playtime'
+      ? fmtTime(Number(row.value))
+      : Number(row.value).toLocaleString();    d.append(a, b, v); root.append(d);
   }
   $("lbMeta").textContent = "Top " + c.rows.length + " · updated " + ago(c.t);
 }

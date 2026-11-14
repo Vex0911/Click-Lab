@@ -1129,7 +1129,11 @@ async function api(fn, args, timeoutMs) {
     const headers = {"Content-Type":"application/json", "apikey":SUPABASE_ANON_KEY};
     if (SUPABASE_ANON_KEY.startsWith("eyJ")) headers.Authorization = "Bearer " + SUPABASE_ANON_KEY;
     const res = await fetch(SUPABASE_URL.replace(/\/+$/, "") + "/rest/v1/rpc/" + fn, {method:"POST", headers, body:JSON.stringify(args || {}), signal:ctl.signal});
-    if (!res.ok) throw new Error("http " + res.status);
+    if (!res.ok) {
+      let detail = "";
+      try { const j = await res.json(); detail = j.message || j.hint || j.error || ""; } catch (e) {}
+      throw new Error("HTTP " + res.status + (detail ? ": " + detail : ""));
+    }
     return await res.json();
   } finally { clearTimeout(timer); }
 }
@@ -1143,7 +1147,7 @@ const USERNAME_ERRORS = {
   bad_secret:"Your Player secret looks invalid. Try restoring your recovery key."
 };
 const profile = {state:"unknown", username:store.get(USERNAME_KEY) || ""};
-let lastSubmitAt = 0, lastSubmitSig = "", lastSubmitOk = 0, submitting = false;
+let lastSubmitAt = 0, lastSubmitSig = "", lastSubmitOk = 0, lastSubmitLife = 0, submitting = false, syncError = "";
 let lbBoard = "ascensions", lbOpenedAt = 0;
 const lbCache = {};
 
@@ -1167,6 +1171,7 @@ function renderProfile() {
   else if (state.tainted) info = "Leaderboard submissions are off for this save because owner tools were used.";
   else if (ownerMultiplier !== 1) info = "Leaderboard submissions are paused while the owner multiplier is active.";
   else if (profile.state === "mismatch") info = "This Player ID is registered with a different key. Restore your recovery key below.";
+  else if (syncError) info = "Score sync failed (" + syncError + "). It will retry automatically.";
   else if (!profile.username) info = "Set a username to appear on the leaderboards.";
   else if (lastSubmitOk) info = "Score synced " + ago(lastSubmitOk) + ".";
   else info = "Your score will sync shortly.";
@@ -1179,7 +1184,8 @@ async function refreshProfile() {
     if (!r || !r.registered) { profile.state = "unregistered"; }
     else if (!r.verified) { profile.state = "mismatch"; }
     else { profile.state = "ok"; profile.username = r.username || ""; store.set(USERNAME_KEY, profile.username); }
-  } catch (e) { profile.state = "offline"; }
+    syncError = "";
+  } catch (e) { profile.state = "offline"; syncError = e.message; }
   renderProfile();
 }
 async function claimUsername() {
@@ -1204,16 +1210,19 @@ async function claimUsername() {
 }
 
 // Track lifetime energy in signature
-const scoreSig = () => state.ascensions + "|" + state.totalRebirths + "|" + state.challenge.done.length + "|" + Math.floor(state.lifetime);
+const scoreSig = () => state.ascensions + "|" + state.totalRebirths + "|" + state.challenge.done.length;
 function canSubmit() {
   return onlineOn() && !!profile.username && profile.state !== "mismatch" && profile.state !== "unregistered" && !state.tainted && ownerMultiplier === 1 && !conflict;
 }
 async function submitScore(force) {
   if (!canSubmit() || submitting) return;
   const sig = scoreSig(), now = Date.now();
-  if (!force && sig === lastSubmitSig) return;
+  // Lifetime energy changes constantly, so it only triggers a resend once a minute.
+  const lifeStale = state.lifetime > lastSubmitLife && now - lastSubmitOk > 60000;
+  if (!force && sig === lastSubmitSig && !lifeStale) return;
   if (now - lastSubmitAt < 20000) return;
   submitting = true; lastSubmitAt = now;
+  const lifeSent = Number.isFinite(state.lifetime) ? state.lifetime : 0;
   try {
     const r = await api("submit_score", {
       p_player_id: PLAYER_ID, 
@@ -1221,12 +1230,14 @@ async function submitScore(force) {
       p_ascensions: state.ascensions, 
       p_total_rebirths: state.totalRebirths, 
       p_challenges: state.challenge.done.length,
-      p_lifetime_energy: state.lifetime
+      p_lifetime_energy: lifeSent
     });
-    if (r && r.ok) { lastSubmitSig = sig; lastSubmitOk = Date.now(); }
+    if (r && r.ok) { lastSubmitSig = sig; lastSubmitOk = Date.now(); lastSubmitLife = lifeSent; syncError = ""; }
     else if (r && r.error === "wrong_secret") profile.state = "mismatch";
-    else if (r && r.error === "bad_values") { lastSubmitSig = sig; }
-  } catch (e) {}
+    else if (r && r.error === "bad_values") { lastSubmitSig = sig; lastSubmitLife = lifeSent; }
+    else if (r && r.error === "rate_limited") { /* try again on the next check */ }
+    else if (r && r.error === "not_registered") profile.state = "unregistered";
+  } catch (e) { syncError = e.message; }
   submitting = false; renderProfile();
 }
 async function loadBoard(force) {
@@ -1239,7 +1250,7 @@ async function loadBoard(force) {
     const rows = await api("get_leaderboard", {p_board:board, p_limit:50, p_player_id:PLAYER_ID});
     lbCache[board] = {t:Date.now(), rows:Array.isArray(rows) ? rows : []};
   } catch (e) {
-    if (board === lbBoard) $("lbMeta").textContent = "Couldn't load the leaderboard. Try Refresh.";
+    if (board === lbBoard) $("lbMeta").textContent = "Couldn't load the leaderboard (" + e.message + "). Try Refresh.";
     return;
   }
   if (board === lbBoard) renderBoard();

@@ -1232,7 +1232,10 @@ async function submitScore(force) {
       p_challenges: state.challenge.done.length,
       p_lifetime_energy: lifeSent
     });
-    if (r && r.ok) { lastSubmitSig = sig; lastSubmitOk = Date.now(); lastSubmitLife = lifeSent; syncError = ""; }
+    if (r && r.ok) {
+      lastSubmitSig = sig; lastSubmitOk = Date.now(); lastSubmitLife = lifeSent; syncError = "";
+      Object.keys(lbCache).forEach(k => delete lbCache[k]); // our own score just changed, so cached boards are stale
+    }
     else if (r && r.error === "wrong_secret") profile.state = "mismatch";
     else if (r && r.error === "bad_values") { lastSubmitSig = sig; lastSubmitLife = lifeSent; }
     else if (r && r.error === "rate_limited") { /* try again on the next check */ }
@@ -1240,12 +1243,14 @@ async function submitScore(force) {
   } catch (e) { syncError = e.message; }
   submitting = false; renderProfile();
 }
+let lastBoardFetch = 0;
 async function loadBoard(force) {
   const board = lbBoard;
   if (!onlineOn()) { renderBoard(); return; }
   const c = lbCache[board];
   if (!force && c && Date.now() - c.t < 30000) { renderBoard(); return; }
-  $("lbMeta").textContent = "Loading…";
+  lastBoardFetch = Date.now();
+  if (!c) $("lbMeta").textContent = "Loading…";
   try {
     const rows = await api("get_leaderboard", {p_board:board, p_limit:50, p_player_id:PLAYER_ID});
     lbCache[board] = {t:Date.now(), rows:Array.isArray(rows) ? rows : []};
@@ -1625,7 +1630,7 @@ $("gBetBtn").addEventListener("click", gamble);
 $("gAmount").addEventListener("keydown", e => { if (e.key === "Enter") gamble(); });
 $("usernameBtn").addEventListener("click", claimUsername);
 $("usernameInput").addEventListener("keydown", e => { if (e.key === "Enter") claimUsername(); });
-$("lbRefresh").addEventListener("click", () => { refreshProfile(); loadBoard(true); });
+$("lbRefresh").addEventListener("click", async () => { await submitScore(true); refreshProfile(); loadBoard(true); });
 $("copyKeyBtn").addEventListener("click", () => copyText(makeRecoveryKey(), "Recovery key copied. Keep it somewhere safe.", "keyText"));
 $("restoreKeyBtn").addEventListener("click", restoreIdentity);
 $("autoUpC").addEventListener("change", e => { state.settings.autoUpgradeClick = e.target.checked; save(); });
@@ -1734,7 +1739,12 @@ setInterval(() => {
     else { $("chipCode").textContent = c.code; $("codeChip").hidden = false; chipUntil = now + 20000; }
   }
   if (chipUntil && now > chipUntil) { $("codeChip").hidden = true; chipUntil = 0; }
-  if (now - lastOnlineCheck >= 5000) { lastOnlineCheck = now; submitScore(false); renderProfile(); if (!$("tab-leaderboard").hidden) renderBoard(); }
+  if (now - lastOnlineCheck >= 5000) { lastOnlineCheck = now; submitScore(false); renderProfile();
+    if (!$("tab-leaderboard").hidden) {
+      // keep the open leaderboard live: re-fetch every 15s while it is visible
+      if (!document.hidden && now - lastBoardFetch >= 15000) loadBoard(true); else renderBoard();
+    }
+  }
   checkAch(); ui(); updateStatus();
 }, 250);
 setInterval(save, 10000);

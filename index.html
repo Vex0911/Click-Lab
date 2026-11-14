@@ -379,16 +379,18 @@ body.gate-locked .wrap,body.gate-locked .codechip{visibility:hidden}
 
 <div id="accessGate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
  <div class="gate-card">
-  <div class="brand">ENERGY LAB // ACCESS</div>
-  <h1 id="gateTitle">Set your game password</h1>
-  <p id="gateDescription">Create a password to lock this browser copy of Energy Lab. You'll enter it whenever you open the game.</p>
+  <div class="brand">ENERGY LAB // PRIVATE ACCESS</div>
+  <h1 id="gateTitle">Account login</h1>
+  <p id="gateDescription">Private access is limited to the Owner and TestAcc accounts.</p>
   <form id="gateForm">
-   <input id="gatePassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Password (8+ characters)" required>
-   <input id="gateConfirm" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Confirm password" required>
-   <button class="primary" id="gateSubmit" type="submit" style="width:100%">Set password</button>
+   <input id="gatePlayerId" type="text" autocomplete="username" maxlength="42" placeholder="Player ID" required>
+   <input id="gatePassword" type="password" autocomplete="current-password" minlength="8" maxlength="128" placeholder="Shared account password" required>
+   <textarea id="gateRecoveryKey" rows="3" autocomplete="off" placeholder="Paste this account's recovery key" required style="width:100%;margin:7px 0;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:#0b1222;color:var(--text);font:inherit;resize:vertical"></textarea>
+   <button class="primary" id="gateSubmit" type="submit" style="width:100%">Log in</button>
   </form>
   <p class="gate-error" id="gateError" aria-live="polite"></p>
-  <p class="muted">This is a local browser lock, not server-side account security. Keep your password safe.</p>
+  <p class="muted">All three fields are required. The Player ID must match the ID inside the recovery key. This private build does not offer public registration.</p>
+  <p class="muted">Your password is verified by the game server. Each account is enrolled once using its recovery key; use the same password for both accounts.</p>
  </div>
 </div>
 <div class="modal" id="modal" hidden><div class="box"><p id="modalMsg"></p><div class="controls"><button class="primary" id="modalYes">Confirm</button><button id="modalNo">Cancel</button></div></div></div>
@@ -420,9 +422,10 @@ function shuffle(arr) {
 }
 
 /* ---------- constants ---------- */
-const VERSION = "5.5";
+const VERSION = "5.6";
 const SAVE_SCHEMA = 4;
-const KEY = "energyLabSave40", BAK1 = "energyLabSave40b", BAK2 = "energyLabSave40c";
+let KEY = "energyLabSave40", BAK1 = "energyLabSave40b", BAK2 = "energyLabSave40c";
+const LEGACY_ACCOUNT_SAVE_KEYS = [KEY, BAK1, BAK2];
 const SKEY = "energyLabSound40";
 const LEGACY_SAVE_KEYS = ["energyLabSave30", "energyLabSave30b", "energyLabSave30c", "energyLabSave21"];
 const LEGACY_SOUND_KEY = "energyLabSound30";
@@ -658,43 +661,53 @@ function releaseAccessGate() {
   document.body.classList.remove("gate-locked");
   $("accessGate").hidden = true;
 }
-function initAccessGate() {
+async function initAccessGate() {
   const saved = store.get(ACCESS_PASSWORD_KEY);
   const hasPassword = !!saved;
-  $("gateTitle").textContent = hasPassword ? "Welcome back" : "Set your game password";
+  $("gateTitle").textContent = "Account login";
   $("gateDescription").textContent = hasPassword
-    ? "Enter your password to unlock Energy Lab."
-    : "Create a password to lock this browser copy of Energy Lab. You'll enter it whenever you open the game.";
-  $("gateConfirm").hidden = hasPassword;
-  $("gateConfirm").required = !hasPassword;
+    ? "Enter the credentials for Owner or TestAcc."
+    : "First login on this browser: your recovery key verifies the account, then this browser saves your shared password check.";
   $("gatePassword").autocomplete = hasPassword ? "current-password" : "new-password";
-  $("gateSubmit").textContent = hasPassword ? "Unlock game" : "Set password";
-  $("gatePassword").focus();
+  $("gateSubmit").textContent = "Log in";
+  $("gatePlayerId").focus();
   $("gateForm").addEventListener("submit", async e => {
     e.preventDefault();
+    const id = $("gatePlayerId").value.trim().toUpperCase();
     const password = $("gatePassword").value;
-    const confirm = $("gateConfirm").value;
+    const keyText = $("gateRecoveryKey").value;
     const error = $("gateError");
     error.textContent = "";
     $("gateSubmit").disabled = true;
     try {
-      if (hasPassword) {
-        const record = JSON.parse(saved);
-        const digest = await passwordDigest(password, record.salt, record.iterations);
-        if (!sameHex(digest, record.hash)) throw new Error("Incorrect password. Try again.");
+      if (id !== OWNER_PLAYER_ID && id !== TESTACC_PLAYER_ID) throw new Error("This private build only accepts the Owner and TestAcc Player IDs.");
+      if (password.length < 8) throw new Error("Enter the shared account password (at least 8 characters).");
+      const recovery = parseRecoveryKey(keyText);
+      if (!recovery) throw new Error("That recovery key is invalid.");
+      if (recovery.id !== id) throw new Error("The recovery key does not belong to the Player ID entered.");
+      if (!onlineOn()) throw new Error("The game server is not configured. Login cannot verify your recovery key.");
+      const verified = await api("player_status", {p_player_id:recovery.id, p_secret:recovery.secret});
+      if (!(verified && verified.registered && verified.verified)) throw new Error("The server did not verify this account's recovery key.");
+      const accountInfo = await api("get_private_login_salt", {p_player_id:id, p_secret:recovery.secret});
+      if (!accountInfo || accountInfo.ok !== true) throw new Error("Private login is not configured yet. Run the V5.6 SQL setup first.");
+      if (accountInfo.configured) {
+        const digest = await passwordDigest(password, accountInfo.salt, accountInfo.iterations);
+        const check = await api("verify_private_login", {p_player_id:id, p_secret:recovery.secret, p_password_hash:digest});
+        if (!(check && check.ok === true && check.verified === true)) throw new Error("Incorrect account password.");
       } else {
-        if (password.length < 8) throw new Error("Use at least 8 characters.");
-        if (password !== confirm) throw new Error("The passwords don't match.");
         const salt = randomHex(16);
-        const hash = await passwordDigest(password, salt, ACCESS_ITERATIONS);
-        const record = JSON.stringify({salt, hash, iterations:ACCESS_ITERATIONS});
-        if (!store.set(ACCESS_PASSWORD_KEY, record)) throw new Error("Couldn't save the password in this browser.");
+        const iterations = ACCESS_ITERATIONS;
+        const digest = await passwordDigest(password, salt, iterations);
+        const enrolled = await api("set_private_login_password", {p_player_id:id, p_secret:recovery.secret, p_salt:salt, p_password_hash:digest, p_iterations:iterations});
+        if (!(enrolled && enrolled.ok === true)) throw new Error("Password setup failed. Check the SQL setup and try again.");
       }
+      applyIdentity(recovery.id, recovery.secret);
       releaseAccessGate();
       $("gatePassword").value = "";
-      $("gateConfirm").value = "";
+      $("gateRecoveryKey").value = "";
+      toast("Logged in as " + (id === OWNER_PLAYER_ID ? "Owner" : "TestAcc") + ".");
     } catch (err) {
-      error.textContent = err && err.message ? err.message : "Couldn't verify the password.";
+      error.textContent = err && err.message ? err.message : "Login failed. Check all three fields and try again.";
       $("gatePassword").select();
     } finally {
       $("gateSubmit").disabled = false;
@@ -733,6 +746,19 @@ const OWNER_PLAYER_ID = "EL-13B6729B-7DF0-4369-A078-FAA9831EA890";
 const TESTACC_PLAYER_ID = "EL-06CC7F1E-0B48-4A28-85E5-FE70805620DB";
 let IS_OWNER = PLAYER_ID === OWNER_PLAYER_ID;
 let IS_TESTACC = PLAYER_ID === TESTACC_PLAYER_ID;
+const INITIAL_PLAYER_ID = PLAYER_ID;
+function setSaveKeysForPlayer(id) {
+  const suffix = id.replace(/[^A-Z0-9]/g, "");
+  KEY = "energyLabSave_" + suffix;
+  BAK1 = KEY + "_b";
+  BAK2 = KEY + "_c";
+  if (id === INITIAL_PLAYER_ID && !store.get(KEY) && store.get(LEGACY_ACCOUNT_SAVE_KEYS[0])) {
+    for (let i = 0; i < LEGACY_ACCOUNT_SAVE_KEYS.length; i++) {
+      const value = store.get(LEGACY_ACCOUNT_SAVE_KEYS[i]);
+      if (value) store.set([KEY, BAK1, BAK2][i], value);
+    }
+  }
+}
 
 const zero = list => Object.fromEntries(list.map(x => [x, 0]));
 const fresh = () => ({
@@ -935,7 +961,7 @@ function sanitize(d) {
 }
 function load() {
   let found = null, from = "", migrated = false;
-  const keys = [KEY, BAK1, BAK2, ...LEGACY_SAVE_KEYS];
+  const keys = [KEY, BAK1, BAK2, ...(PLAYER_ID === INITIAL_PLAYER_ID ? LEGACY_SAVE_KEYS : [])];
   for (const k of keys) {
     const raw = store.get(k); if (!raw) continue;
     try {
@@ -1464,6 +1490,8 @@ function parseRecoveryKey(text) {
 function applyIdentity(id, secret) {
   PLAYER_ID = id; PLAYER_SECRET = secret; IS_OWNER = PLAYER_ID === OWNER_PLAYER_ID; IS_TESTACC = PLAYER_ID === TESTACC_PLAYER_ID;
   store.set(PLAYER_ID_KEY, id); store.set(PLAYER_SECRET_KEY, secret);
+  setSaveKeysForPlayer(id);
+  state = fresh(); load();
   profile.state = "unknown"; profile.username = ""; store.remove(USERNAME_KEY);
   lastSubmitSig = ""; lastSubmitAt = 0; lastSubmitOk = 0;
   Object.keys(lbCache).forEach(k => delete lbCache[k]);
@@ -1851,6 +1879,7 @@ window.addEventListener("storage", e => {
   } catch (err) {}
 });
 
+setSaveKeysForPlayer(PLAYER_ID);
 load();
 $("volume").value = Math.round(state.settings.volume * 100);
 $("storeMode").textContent = store.mode === "local" ? "Storage: browser" : store.mode === "session" ? "Storage: this tab only" : "Storage: unavailable (use Export)";

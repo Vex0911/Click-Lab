@@ -82,11 +82,11 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 .player-id-value{font:600 13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--cyan);overflow-wrap:anywhere;user-select:all}
 .player-id-note{flex-basis:100%;margin:0}
 .owner-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;background:#3b2d12;border:1px solid #b88b32;color:#ffda83;font-size:10px;font-weight:900;letter-spacing:.12em}
-.owner-panel{border-color:#8b6b2d;box-shadow:0 0 0 1px #8b6b2d22}
-.owner-panel .panel-head h2{color:#ffda83}
-.owner-setting{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:12px 0}
-.owner-setting input[type=range]{flex:1;min-width:180px;accent-color:#ffd166}
-.owner-value{min-width:42px;color:#ffda83;font-weight:800;font-variant-numeric:tabular-nums}
+details.pick{margin-top:12px;background:#101828;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+details.pick summary{cursor:pointer;font-weight:700;font-size:13px}
+.pick-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-top:8px}
+.pick-grid label{display:flex;gap:8px;align-items:center;font-size:13px}
+.pick-head{grid-column:1/-1;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan);margin-top:6px}
 .lbrow{display:grid;grid-template-columns:44px 1fr auto;gap:8px;align-items:center;padding:7px 10px;border-radius:10px;font-size:13px;border:1px solid transparent}
 .lbrow:nth-child(odd){background:#101828}
 .lbrow.you{background:#143a4a;border-color:#3aa7c2}
@@ -109,7 +109,7 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
 </head>
 <body>
 <div class="wrap">
- <div class="top"><div><div class="brand">ENERGY LAB // 5.1</div><div class="sub">Energy Lab V5.1 Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
+ <div class="top"><div><div class="brand">ENERGY LAB // 5.2</div><div class="sub">Energy Lab V5.2 Release</div></div><div class="sub" id="saveStatus">autosave ready</div></div>
  <div class="warn" id="storeWarn" hidden>Saving isn't fully available in this embedded view, so progress may only last until you close the tab. Go to Settings and use Export save file or Copy save code to keep your progress.</div>
  <div class="boost" id="boost" hidden></div>
  <section class="stats">
@@ -129,7 +129,6 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
   <button data-tab="leaderboard">Leaderboard</button>
   <button data-tab="stats">Stats</button>
   <button data-tab="settings">Settings</button>
-  <button data-tab="owner" hidden>Owner</button>
  </nav>
 
  <section id="tab-core">
@@ -182,7 +181,7 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
     <p class="muted" id="ascInfo"></p>
     <div class="notice" id="tierInfo" style="margin:10px 0">Current tier: Core · Next tier: Stellar at 5 ascensions.</div>
     <div class="controls" style="justify-content:flex-start"><button class="primary js-ascend">Ascend</button></div>
-    <p class="muted">Ascending resets your rebirths, Rebirth Points, rebirth shop levels, energy and upgrades. In return you get Ascension Points and a permanent multiplier.</p>
+    <p class="muted">Ascending resets your rebirths, Rebirth Points, energy, upgrades and rebirth shop levels, except rebirth upgrades you have fully maxed, which are kept. In return you get Ascension Points and a permanent multiplier.</p>
    </section>
    <section class="panel">
     <div class="panel-head"><h2>Ascension Shop</h2></div>
@@ -293,7 +292,17 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
     <div class="row"></div>
     <label class="switch"><input type="checkbox" id="autoRe"> Auto-Rebirth <span class="muted" id="autoReNote"></span></label>
     <div class="row"></div>
+    <label class="switch"><input type="checkbox" id="autoAsc"> Auto-Ascend <span class="muted" id="autoAscNote"></span></label>
+    <div class="row"></div>
     <label class="switch"><input type="checkbox" id="autoCl"> Auto-Claim Codes <span class="muted" id="autoClNote"></span></label>
+    <details class="pick">
+     <summary>Choose what Auto-Upgrade buys</summary>
+     <div class="controls" style="justify-content:flex-start;margin-top:8px"><button id="pickAll">Select all</button><button id="pickNone">Select none</button></div>
+     <div class="pick-grid" id="pickGrid"></div>
+     <p class="muted" style="margin-top:8px">Auto-Upgrade only buys the upgrades ticked here (and only in the Clicks / Generators groups you have switched on above).</p>
+    </details>
+    <div class="row" style="margin-top:14px"></div>
+    <label class="switch"><input type="checkbox" id="noGambleConfirm"> No gamble confirmation (skip the warning on big wagers)</label>
     <p class="muted" style="margin-top:12px">Unlocked automation does not turn on by itself. Switch it on here.</p>
    </section>
    <section class="panel">
@@ -319,40 +328,10 @@ textarea{width:100%;margin-top:12px;padding:9px 11px;border-radius:10px;border:1
    <input id="importFile" type="file" accept=".txt,.elsave,text/plain" hidden>
    <textarea id="saveText" rows="3" placeholder="Your V4 save code appears here. Paste a supported save code here and press Import code." spellcheck="false"></textarea>
    <div class="controls" style="justify-content:flex-start;margin-top:8px"><button id="importBtn">Import code</button></div>
-   <p class="muted" style="margin-top:10px">V4 uses a versioned save format with integrity checks, automatic V3 migration, and two rolling backups. Autosaves every 10 seconds. V3 save codes remain importable. Player ID and Owner settings are stored separately from progression.</p>
+   <p class="muted" style="margin-top:10px">V4 uses a versioned save format with integrity checks, automatic V3 migration, and two rolling backups. Autosaves every 10 seconds. V3 save codes remain importable. Your Player ID is stored separately from progression.</p>
   </section>
  </section>
 
- <section id="tab-owner" hidden>
-  <section class="panel owner-panel" id="ownerPanel">
-   <div class="panel-head"><h2>Owner Panel</h2><span class="owner-badge">OWNER ACCESS</span></div>
-   <p class="muted">Owner-only local game controls. Changes apply in this browser and are kept separately from your progression save. Using any of them turns off leaderboard submissions for the current save.</p>
-
-   <div class="owner-setting">
-    <label for="ownerMultiplierRange">Global production multiplier</label>
-    <input type="range" id="ownerMultiplierRange" min="1" max="500" step="0.5" value="1">
-    <span class="owner-value" id="ownerMultiplierValue">1.0x</span>
-   </div>
-
-   <div class="owner-setting">
-    <label for="addRebirthAmount">Add Rebirth:</label>
-    <input type="number" id="addRebirthAmount" min="1" max="1000000" step="1" value="1">
-    <button id="addRebirthBtn">Add</button>
-   </div>
-
-   <div class="owner-setting">
-    <label for="addAscensionAmount">Add Ascension:</label>
-    <input type="number" id="addAscensionAmount" min="1" max="9999999" step="1" value="1">
-    <button id="addAscensionBtn">Add</button>
-   </div>
-
-   <div class="controls" style="justify-content:flex-start;margin-top:8px">
-    <button id="ownerResetBtn">Reset owner settings</button>
-   </div>
-   <p class="muted" id="ownerStatus">Production multiplier is currently 1.0x.</p>
-   <p class="muted">This is a local owner interface, not secure account authentication. A server-side owner check is required before using it for online/global administration.</p>
-  </section>
- </section>
 </div>
 
 <div class="codechip" id="codeChip" hidden><span class="muted">New code:</span><b id="chipCode"></b><button class="primary" id="chipUse">Redeem</button><button class="quiet" id="chipX" aria-label="Dismiss">✕</button></div>
@@ -386,7 +365,7 @@ function shuffle(arr) {
 }
 
 /* ---------- constants ---------- */
-const VERSION = "5.0";
+const VERSION = "5.2";
 const SAVE_SCHEMA = 4;
 const KEY = "energyLabSave40", BAK1 = "energyLabSave40b", BAK2 = "energyLabSave40c";
 const SKEY = "energyLabSound40";
@@ -403,15 +382,18 @@ const CODE_FIRST = [240000, 480000], CODE_NEXT = [480000, 1200000]; // ms
 const BOOST_TIERS = [{m:1.1,p:0.01},{m:1.25,p:0.006},{m:1.5,p:0.0035},{m:1.75,p:0.002},{m:2,p:0.001},{m:2.5,p:0.0005}];
 const BOOST_SECS = 30;
 
-const UNITS = ["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc"];
+const UNITS = ["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n) {
   if (!Number.isFinite(n)) return "∞";
   if (n < 1000) return (Math.floor(n * 10) / 10).toLocaleString();
-  if (n >= 1e36) return n.toExponential(2).replace("e+", "e");
+  if (n >= 1e66) return n.toExponential(2).replace("e+", "e");
   let i = -1;
   while (n >= 1000 && i < UNITS.length - 1) { n /= 1000; i++; }
   let s = n.toFixed(n >= 100 ? 0 : n >= 10 ? 1 : 2);
-  if (Number(s) >= 1000 && i < UNITS.length - 1) { s = (Number(s) / 1000).toFixed(2); i++; }
+  if (Number(s) >= 1000) {
+    if (i >= UNITS.length - 1) return (n * Math.pow(1000, i + 1)).toExponential(2).replace("e+", "e");
+    s = (Number(s) / 1000).toFixed(2); i++;
+  }
   return s + UNITS[i];
 }
 function fmtTime(sec) {
@@ -514,7 +496,8 @@ const aItems = [
   {id:"core",store:"ashop",cur:"ap",name:"Power Core",base:1,growth:1.7,max:40,desc:l=>"+25% to all production per level · now +"+l*25+"%"},
   {id:"overdrive",store:"ashop",cur:"ap",name:"Overdrive",base:1,growth:1.7,max:40,desc:l=>"+30% click power per level · now +"+l*30+"%"},
   {id:"efficient",store:"ashop",cur:"ap",name:"Efficient Rebirths",base:2,growth:2,max:10,desc:l=>"-10% rebirth requirement per level · now x"+Math.pow(0.9,l).toFixed(2)},
-  {id:"autoRe",unlock:"autoRebirth",cur:"ap",name:"Auto-Rebirth",base:3,max:1,desc:()=>"Unlocks the Auto-Rebirth setting"}
+  {id:"autoRe",unlock:"autoRebirth",cur:"ap",name:"Auto-Rebirth",base:3,max:1,desc:()=>"Unlocks the Auto-Rebirth setting"},
+  {id:"autoAsc",unlock:"autoAscend",cur:"ap",name:"Auto-Ascend",base:6,max:1,desc:()=>"Unlocks the Auto-Ascend setting: ascends as soon as you can"}
 ];
 
 const ACH = [
@@ -623,12 +606,6 @@ let PLAYER_ID = getPlayerId();
 let PLAYER_SECRET = getPlayerSecret();
 const OWNER_PLAYER_ID = "EL-13B6729B-7DF0-4369-A078-FAA9831EA890";
 let IS_OWNER = PLAYER_ID === OWNER_PLAYER_ID;
-const OWNER_SETTINGS_KEY = "energyLabOwnerSettings40";
-function readOwnerMultiplier() {
-  const raw = Number(store.get(OWNER_SETTINGS_KEY));
-  return Number.isFinite(raw) ? Math.max(1, Math.min(500, Math.round(raw * 2) / 2)) : 1;
-}
-let ownerMultiplier = readOwnerMultiplier();
 
 const zero = list => Object.fromEntries(list.map(x => [x, 0]));
 const fresh = () => ({
@@ -636,10 +613,10 @@ const fresh = () => ({
   owned: zero(upgrades.map(u => u.id)),
   rebirths:0, totalRebirths:0, rp:0, rshop: zero(["overcharge","generator","discount","headstart"]),
   ascensions:0, ap:0, ashop: zero(["core","overdrive","efficient"]),
-  unlocks:{autoUpgrade:false, autoRebirth:false, autoClaim:false},
-  settings:{autoUpgradeClick:false, autoUpgradeGen:false, autoRebirth:false, autoClaim:false, sound:false, volume:0.5},
+  unlocks:{autoUpgrade:false, autoRebirth:false, autoClaim:false, autoAscend:false},
+  settings:{autoUpgradeClick:false, autoUpgradeGen:false, autoPick:Object.fromEntries(upgrades.map(u => [u.id, true])), autoRebirth:false, autoAscend:false, autoClaim:false, noGambleConfirm:false, sound:false, volume:0.5},
   achieved:[], codes:[], challenge:{active:null, done:[], offers:[], rerolls:0},
-  gamble:{plays:0, wins:0, jackpots:0}, tainted:false,
+  gamble:{plays:0, wins:0, jackpots:0},
   boost:{mult:1, until:0}, stats:{playtime:0}, last:Date.now()
 });
 let state = fresh();
@@ -658,12 +635,12 @@ function chalMult(kind) { let m = 1; for (const c of CHALLENGES) if (state.chall
 function clickPower() {
   let base = 1;
   if (chal() !== "monk") for (const u of upgrades) if (u.kind === "click") base += u.amount * state.owned[u.id];
-  return base * rebirthMult() * ascMult() * boostMult() * chalMult("click") * (1 + 0.1 * rLvl("overcharge")) * (1 + 0.3 * aLvl("overdrive")) * ownerMultiplier;
+  return base * rebirthMult() * ascMult() * boostMult() * chalMult("click") * (1 + 0.1 * rLvl("overcharge")) * (1 + 0.3 * aLvl("overdrive"));
 }
 function rate(noBoost) {
   let base = 0;
   for (const u of upgrades) if (u.kind === "rate") base += u.amount * state.owned[u.id];
-  return base * rebirthMult() * ascMult() * (noBoost ? 1 : boostMult()) * chalMult("rate") * (1 + 0.1 * rLvl("generator")) * ownerMultiplier;
+  return base * rebirthMult() * ascMult() * (noBoost ? 1 : boostMult()) * chalMult("rate") * (1 + 0.1 * rLvl("generator"));
 }
 const discount = () => Math.min(0.4, 0.02 * rLvl("discount"));
 const cost = (u, level) => Math.ceil(u.base * Math.pow(u.growth, level === undefined ? state.owned[u.id] : level) * (1 - discount()) * (chal() === "pricey" ? 2 : 1));
@@ -798,12 +775,14 @@ function sanitize(d) {
   s.ascensions = int(d.ascensions, 0); s.ap = int(d.ap, 0);
   for (const it of aItems) if (it.store) s.ashop[it.id] = int(d.ashop && d.ashop[it.id], 0, it.max);
   const un = d.unlocks || {};
-  s.unlocks.autoUpgrade = !!un.autoUpgrade; s.unlocks.autoRebirth = !!un.autoRebirth; s.unlocks.autoClaim = !!un.autoClaim;
+  s.unlocks.autoUpgrade = !!un.autoUpgrade; s.unlocks.autoRebirth = !!un.autoRebirth; s.unlocks.autoClaim = !!un.autoClaim; s.unlocks.autoAscend = !!un.autoAscend;
   const st = d.settings || {};
   const legacyUp = !!st.autoUpgrade;
   s.settings.autoUpgradeClick = st.autoUpgradeClick === undefined ? legacyUp : !!st.autoUpgradeClick;
   s.settings.autoUpgradeGen = st.autoUpgradeGen === undefined ? legacyUp : !!st.autoUpgradeGen;
   s.settings.autoRebirth = !!st.autoRebirth; s.settings.autoClaim = !!st.autoClaim; s.settings.sound = !!st.sound;
+  s.settings.autoAscend = !!st.autoAscend; s.settings.noGambleConfirm = !!st.noGambleConfirm;
+  s.settings.autoPick = Object.fromEntries(upgrades.map(u => [u.id, !(st.autoPick && st.autoPick[u.id] === false)]));
   s.settings.volume = Math.min(1, num(st.volume, 0.5));
   s.achieved = Array.isArray(d.achieved) ? d.achieved.filter(x => ACH.some(a => a.id === x)) : [];
   s.codes = Array.isArray(d.codes) ? d.codes.filter(x => CODES.some(c => c.code === x)) : [];
@@ -816,7 +795,6 @@ function sanitize(d) {
   s.challenge.rerolls = int(ch.rerolls, 0);
   const g = d.gamble || {};
   s.gamble = {plays:int(g.plays, 0), wins:int(g.wins, 0), jackpots:int(g.jackpots, 0)};
-  s.tainted = !!d.tainted;
   const bo = d.boost || {};
   s.boost = {mult: Math.min(2.5, num(bo.mult, 1, 1)), until: num(bo.until, 0)};
   s.stats = {playtime: num(d.stats && d.stats.playtime, 0)};
@@ -933,7 +911,11 @@ function sellUp(u) {
 }
 function resetRun() {
   state.energy = 0; state.owned = zero(upgrades.map(u => u.id));
-  state.rebirths = 0; state.rp = 0; state.rshop = zero(["overcharge","generator","discount","headstart"]);
+  state.rebirths = 0; state.rp = 0;
+  // Rebirth upgrades that are fully maxed are kept; everything else resets.
+  const kept = zero(["overcharge","generator","discount","headstart"]);
+  for (const it of rItems) if (it.store && state.rshop[it.id] >= it.max) kept[it.id] = it.max;
+  state.rshop = kept;
 }
 function doRebirth(auto) {
   if (!canRebirth()) return;
@@ -1017,7 +999,7 @@ function rerollOffers() {
 }
 function startChallenge(c) {
   if (!state.challenge.offers.includes(c.id)) return;
-  confirmBox('Start "' + c.name + '"? This resets energy, upgrades, rebirths and the rebirth shop. Ascension bonuses stay.', () => {
+  confirmBox('Start "' + c.name + '"? This resets energy, upgrades, rebirths and rebirth shop levels (maxed rebirth upgrades are kept). Ascension bonuses stay.', () => {
     resetRun(); state.challenge.active = c.id; ui(); save(); toast("Challenge started: " + c.name);
   });
 }
@@ -1091,7 +1073,7 @@ function gamble() {
   if (w < 1) return toast("The minimum wager is 1.");
   const bal = state[cur.key];
   if (w > bal) return toast("You don't have that much " + cur.name + ".");
-  if (w >= bal * 0.5) {
+  if (w >= bal * 0.5 && !state.settings.noGambleConfirm) {
     const pct = Math.round(w / bal * 100);
     return confirmBox("Wager " + fmtCur(cur.key, w) + " " + cur.short + " (" + pct + "% of your balance) on " + game.name + "?", () => resolveBet(cur.key, game, w));
   }
@@ -1147,7 +1129,7 @@ const USERNAME_ERRORS = {
   bad_secret:"Your Player secret looks invalid. Try restoring your recovery key."
 };
 const profile = {state:"unknown", username:store.get(USERNAME_KEY) || ""};
-let lastSubmitAt = 0, lastSubmitSig = "", lastSubmitOk = 0, lastSubmitLife = 0, submitting = false, syncError = "";
+let lastSubmitAt = 0, lastSubmitSig = "", lastSubmitOk = 0, lastSubmitLife = 0, lastSubmitPlay = 0, submitting = false, syncError = "";
 let lbBoard = "ascensions", lbOpenedAt = 0;
 const lbCache = {};
 
@@ -1156,7 +1138,8 @@ const LB_BOARDS = [
   {id:"ascensions", label:"Ascensions"}, 
   {id:"rebirths", label:"Total rebirths"}, 
   {id:"challenges", label:"Challenges"},
-  {id:"lifetime_energy", label:"Lifetime Energy"}
+  {id:"lifetime_energy", label:"Lifetime Energy"},
+  {id:"playtime", label:"Playtime"}
 ];
 
 function setUsernameMsg(msg, bad) { const e = $("usernameMsg"); e.textContent = msg; e.style.color = bad ? "var(--red)" : ""; }
@@ -1168,8 +1151,6 @@ function renderProfile() {
   $("usernameBtn").disabled = !on;
   let info;
   if (!on) info = "Online features are off until the Supabase details are added.";
-  else if (state.tainted) info = "Leaderboard submissions are off for this save because owner tools were used.";
-  else if (ownerMultiplier !== 1) info = "Leaderboard submissions are paused while the owner multiplier is active.";
   else if (profile.state === "mismatch") info = "This Player ID is registered with a different key. Restore your recovery key below.";
   else if (syncError) info = "Score sync failed (" + syncError + "). It will retry automatically.";
   else if (!profile.username) info = "Set a username to appear on the leaderboards.";
@@ -1212,17 +1193,18 @@ async function claimUsername() {
 // Track lifetime energy in signature
 const scoreSig = () => state.ascensions + "|" + state.totalRebirths + "|" + state.challenge.done.length;
 function canSubmit() {
-  return onlineOn() && !!profile.username && profile.state !== "mismatch" && profile.state !== "unregistered" && !state.tainted && ownerMultiplier === 1 && !conflict;
+  return onlineOn() && !!profile.username && profile.state !== "mismatch" && profile.state !== "unregistered" && !conflict;
 }
 async function submitScore(force) {
   if (!canSubmit() || submitting) return;
   const sig = scoreSig(), now = Date.now();
   // Lifetime energy changes constantly, so it only triggers a resend once a minute.
-  const lifeStale = state.lifetime > lastSubmitLife && now - lastSubmitOk > 60000;
+  const lifeStale = (state.lifetime > lastSubmitLife || state.stats.playtime > lastSubmitPlay + 30) && now - lastSubmitOk > 60000;
   if (!force && sig === lastSubmitSig && !lifeStale) return;
   if (now - lastSubmitAt < 20000) return;
   submitting = true; lastSubmitAt = now;
   const lifeSent = Number.isFinite(state.lifetime) ? state.lifetime : 0;
+  const playSent = Math.floor(Number.isFinite(state.stats.playtime) ? state.stats.playtime : 0);
   try {
     const r = await api("submit_score", {
       p_player_id: PLAYER_ID, 
@@ -1230,14 +1212,15 @@ async function submitScore(force) {
       p_ascensions: state.ascensions, 
       p_total_rebirths: state.totalRebirths, 
       p_challenges: state.challenge.done.length,
-      p_lifetime_energy: lifeSent
+      p_lifetime_energy: lifeSent,
+      p_playtime: playSent
     });
     if (r && r.ok) {
-      lastSubmitSig = sig; lastSubmitOk = Date.now(); lastSubmitLife = lifeSent; syncError = "";
+      lastSubmitSig = sig; lastSubmitOk = Date.now(); lastSubmitLife = lifeSent; lastSubmitPlay = playSent; syncError = "";
       Object.keys(lbCache).forEach(k => delete lbCache[k]); // our own score just changed, so cached boards are stale
     }
     else if (r && r.error === "wrong_secret") profile.state = "mismatch";
-    else if (r && r.error === "bad_values") { lastSubmitSig = sig; lastSubmitLife = lifeSent; }
+    else if (r && r.error === "bad_values") { lastSubmitSig = sig; lastSubmitLife = lifeSent; lastSubmitPlay = playSent; }
     else if (r && r.error === "rate_limited") { /* try again on the next check */ }
     else if (r && r.error === "not_registered") profile.state = "unregistered";
   } catch (e) { syncError = e.message; }
@@ -1271,7 +1254,7 @@ function renderBoard() {
     const d = el("div", "lbrow" + (row.is_you ? " you" : "")), a = el("span", "rk"), b = el("span", "nm"), v = el("span", "vl");
     a.textContent = "#" + row.rank; 
     b.textContent = row.username + (row.is_you ? " (you)" : ""); 
-    v.textContent = (lbBoard === 'lifetime_energy') ? fmt(row.value) : Number(row.value).toLocaleString();
+    v.textContent = lbBoard === 'lifetime_energy' ? fmt(row.value) : lbBoard === 'playtime' ? fmtTime(row.value) : Number(row.value).toLocaleString();
     d.append(a, b, v); root.append(d);
   }
   $("lbMeta").textContent = "Top " + c.rows.length + " · updated " + ago(c.t);
@@ -1301,7 +1284,6 @@ function applyIdentity(id, secret) {
   lastSubmitSig = ""; lastSubmitAt = 0; lastSubmitOk = 0;
   Object.keys(lbCache).forEach(k => delete lbCache[k]);
   refreshIdentityUI();
-  if (!IS_OWNER && !$("tab-owner").hidden) navBtns.core.click();
   refreshProfile(); loadBoard(true);
 }
 async function restoreIdentity() {
@@ -1416,6 +1398,25 @@ const statRefs = STATS.map(([label, fn]) => {
 });
 const navBtns = {}; document.querySelectorAll("#nav button").forEach(b => { navBtns[b.dataset.tab] = b; });
 
+/* auto-upgrade picker */
+const pickRefs = [];
+(function buildPicker() {
+  const grid = $("pickGrid");
+  for (const [label, kind] of [["Click upgrades", "click"], ["Generators", "rate"]]) {
+    const h = el("div", "pick-head"); h.textContent = label; grid.append(h);
+    for (const u of upgrades.filter(x => x.kind === kind)) {
+      const lab = el("label"), box = document.createElement("input"); box.type = "checkbox";
+      box.addEventListener("change", () => { state.settings.autoPick[u.id] = box.checked; save(); });
+      lab.append(box, document.createTextNode(u.name)); grid.append(lab);
+      pickRefs.push({u, box});
+    }
+  }
+})();
+$("pickAll").addEventListener("click", () => { for (const u of upgrades) state.settings.autoPick[u.id] = true; ui(); save(); });
+$("pickNone").addEventListener("click", () => { for (const u of upgrades) state.settings.autoPick[u.id] = false; ui(); save(); });
+$("autoAsc").addEventListener("change", e => { state.settings.autoAscend = e.target.checked; save(); });
+$("noGambleConfirm").addEventListener("change", e => { state.settings.noGambleConfirm = e.target.checked; save(); });
+
 const gCurBtns = {}, gGameBtns = {};
 (function buildCasino() {
   for (const id of Object.keys(CURRENCIES)) {
@@ -1444,11 +1445,6 @@ for (const b of LB_BOARDS) {
 function refreshIdentityUI() {
   $("playerIdValue").textContent = PLAYER_ID;
   $("ownerBadge").hidden = !IS_OWNER;
-  $("ownerPanel").hidden = !IS_OWNER;
-  navBtns.owner.hidden = !IS_OWNER;
-  $("ownerMultiplierRange").value = ownerMultiplier;
-  $("ownerMultiplierValue").textContent = ownerMultiplier.toFixed(1) + "x";
-  $("ownerStatus").textContent = "Production multiplier is currently " + ownerMultiplier.toFixed(1) + "x.";
 }
 
 function renderAch() {
@@ -1556,6 +1552,11 @@ function ui() {
   $("autoUpC").disabled = !un.autoUpgrade; $("autoUpC").checked = un.autoUpgrade && s.autoUpgradeClick;
   $("autoUpG").disabled = !un.autoUpgrade; $("autoUpG").checked = un.autoUpgrade && s.autoUpgradeGen;
   $("autoUpCNote").textContent = $("autoUpGNote").textContent = un.autoUpgrade ? "" : "(locked · Rebirth Shop)";
+  $("autoAsc").disabled = !un.autoAscend; $("autoAsc").checked = un.autoAscend && s.autoAscend;
+  $("autoAscNote").textContent = un.autoAscend ? "" : "(locked · Ascension Shop)";
+  $("noGambleConfirm").checked = !!s.noGambleConfirm;
+  for (const r of pickRefs) { r.box.checked = s.autoPick[r.u.id] !== false; r.box.disabled = !un.autoUpgrade; }
+  $("pickAll").disabled = $("pickNone").disabled = !un.autoUpgrade;
   $("autoRe").disabled = !un.autoRebirth; $("autoRe").checked = un.autoRebirth && s.autoRebirth;
   $("autoReNote").textContent = un.autoRebirth ? "" : "(locked · Ascension Shop)";
   $("autoCl").disabled = !un.autoClaim; $("autoCl").checked = un.autoClaim && s.autoClaim;
@@ -1565,60 +1566,10 @@ function ui() {
 
 $("orb").addEventListener("click", clickCore);
 $("copyPlayerIdBtn").addEventListener("click", () => copyText(PLAYER_ID, "Player ID copied.", "keyText"));
-function readOwnerAmount(id) {
-  const amount = Number($(id).value);
-  if (!Number.isSafeInteger(amount) || amount < 1 || amount > 1000000) {
-    toast("Enter a whole number from 1 to 1,000,000.");
-    return null;
-  }
-  return amount;
-}
-$("addRebirthBtn").addEventListener("click", () => {
-  if (!IS_OWNER) return;
-  const amount = readOwnerAmount("addRebirthAmount");
-  if (amount === null) return;
-  const pointsPerRebirth = rpGain();
-  state.rebirths += amount;
-  state.totalRebirths += amount;
-  state.rp += pointsPerRebirth * amount;
-  state.tainted = true;
-  checkAch(); ui(); save(); renderProfile();
-  toast("Added " + amount + " rebirth" + (amount === 1 ? "" : "s") + " and " + pointsPerRebirth * amount + " RP.");
-});
-$("addAscensionBtn").addEventListener("click", () => {
-  if (!IS_OWNER) return;
-  const amount = readOwnerAmount("addAscensionAmount");
-  if (amount === null) return;
-  const pointsPerAscension = apGain();
-  state.ascensions += amount;
-  state.ap += pointsPerAscension * amount;
-  state.tainted = true;
-  checkAch(); ui(); save(); renderProfile();
-  toast("Added " + amount + " ascension" + (amount === 1 ? "" : "s") + " and " + pointsPerAscension * amount + " AP.");
-});
-$("ownerMultiplierRange").addEventListener("input", e => {
-  if (!IS_OWNER) return;
-  ownerMultiplier = Math.max(1, Math.min(500, Math.round(Number(e.target.value) * 2) / 2));
-  store.set(OWNER_SETTINGS_KEY, String(ownerMultiplier));
-  if (ownerMultiplier > 1) state.tainted = true;
-  $("ownerMultiplierValue").textContent = ownerMultiplier.toFixed(1) + "x";
-  $("ownerStatus").textContent = "Production multiplier is currently " + ownerMultiplier.toFixed(1) + "x.";
-  ui(); renderProfile();
-});
-$("ownerResetBtn").addEventListener("click", () => {
-  if (!IS_OWNER) return;
-  ownerMultiplier = 1;
-  store.set(OWNER_SETTINGS_KEY, "1");
-  $("ownerMultiplierRange").value = "1";
-  $("ownerMultiplierValue").textContent = "1.0x";
-  $("ownerStatus").textContent = "Production multiplier is currently 1.0x.";
-  ui(); renderProfile();
-  toast("Owner settings reset.");
-});
 document.querySelectorAll(".js-rebirth").forEach(b => b.addEventListener("click", () => doRebirth(false)));
 document.querySelectorAll(".js-ascend").forEach(b => b.addEventListener("click", () => {
   if (!canAscend()) return;
-  confirmBox("Ascend now? You gain " + apGain() + " Ascension Points and a permanent boost. Rebirths, Rebirth Points, the rebirth shop, energy and upgrades reset.", doAscend);
+  confirmBox("Ascend now? You gain " + apGain() + " Ascension Points and a permanent boost. Rebirths, Rebirth Points, energy, upgrades and non-maxed rebirth shop levels reset.", doAscend);
 }));
 document.querySelectorAll("#nav button").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll("#nav button").forEach(x => x.classList.toggle("on", x === b));
@@ -1708,7 +1659,7 @@ function autoBuy() {
   for (let i = 0; i < 30; i++) {
     let best = null, bp = Infinity;
     for (const u of upgrades) {
-      if (!kinds.includes(u.kind) || !canBuyType(u) || state.owned[u.id] >= upgradeCap()) continue;
+      if (!kinds.includes(u.kind) || state.settings.autoPick[u.id] === false || !canBuyType(u) || state.owned[u.id] >= upgradeCap()) continue;
       const p = cost(u); if (p <= state.energy && p < bp) { best = u; bp = p; }
     }
     if (!best) break;
@@ -1728,6 +1679,7 @@ setInterval(() => {
   }
   if (state.unlocks.autoUpgrade && now - lastAuto >= 500) { lastAuto = now; autoBuy(); }
   if (state.unlocks.autoRebirth && state.settings.autoRebirth && canRebirth()) doRebirth(true);
+  if (state.unlocks.autoAscend && state.settings.autoAscend && canAscend()) doAscend();
   if (now >= nextRoll) {
     nextRoll = now + 60000;
     if (!boostActive()) for (let i = BOOST_TIERS.length - 1; i >= 0; i--) if (Math.random() < BOOST_TIERS[i].p) { startBoost(BOOST_TIERS[i].m, BOOST_SECS); break; }
